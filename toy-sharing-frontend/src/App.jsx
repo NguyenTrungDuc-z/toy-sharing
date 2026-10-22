@@ -12,6 +12,8 @@ import AdminDashboard from './components/AdminDashboard';
 import RoleManagement from './components/RoleManagement'; 
 import ToyModeration from './components/ToyModeration';
 import Profile from './components/Profile';
+import AdminReports from './components/AdminReports';
+import Favorites from './components/Favorites';
 
 export default function App() {
   // Trạng thái trang hiện tại: 'home', 'my-toys', 'login', 'register', 'admin-dashboard', 'role-management'
@@ -100,6 +102,7 @@ export default function App() {
         {page === 'home' && user?.role !== 'admin' && <Home user={user} setPage={navigateTo} />}
         {page === 'my-toys' && user?.role !== 'admin' && <MyToys user={user} setPage={navigateTo} />}
         {page === 'requests' && user?.role !== 'admin' && <Requests user={user} setPage={navigateTo} />}
+        {page === 'favorites' && user?.role !== 'admin' && <Favorites setPage={navigateTo} />}
         {page === 'profile' && user && user.role !== 'admin' && (
           <Profile
             user={user}
@@ -134,6 +137,10 @@ export default function App() {
 
         {page === 'toy-moderation' && user?.role === 'admin' && (
           <ToyModeration setPage={navigateTo} />
+        )}
+
+        {page === 'admin-reports' && user?.role === 'admin' && (
+          <AdminReports setPage={navigateTo} />
         )}
         
       </div>

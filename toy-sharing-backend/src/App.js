@@ -50,6 +50,7 @@ app.use('/api/borrows', require('./routes/borrowRoutes'));
 
 // Tuyến đường xử lý Auth (Đăng ký / Đăng nhập)
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/admin/reports', require('./routes/reportRoutes'));
 // Tuyến đường xử lý đồ chơi (CRUD, mượn trả, quản lý cá nhân)
 app.use('/api/toys', require('./routes/toyRoutes'));
 

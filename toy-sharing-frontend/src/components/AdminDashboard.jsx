@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Line } from 'react-chartjs-2';
 import {
@@ -126,6 +126,15 @@ export default function AdminDashboard({ setPage }) {
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
              Kiểm soát bài đăng
+          </button>
+
+          <button
+            onClick={() => setPage('admin-reports')}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '14px 16px', borderRadius: '14px', border: 'none', backgroundColor: 'transparent', color: '#7c6e65', fontWeight: '550', fontSize: '14px', cursor: 'pointer', textAlign: 'left' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff8f2'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+             Báo cáo vi phạm
           </button>
 
           <button 

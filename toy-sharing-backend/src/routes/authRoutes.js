@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const Toy = require('../models/Toy');       
 const BorrowRequest = require('../models/BorrowRequest'); 
+const Report = require('../models/Report');
 const jwt = require('jsonwebtoken');
 const auth = require('../middleware/auth');
 
@@ -81,6 +82,21 @@ router.get('/me', auth, async (req, res) => {
         res.status(200).json({ user });
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server khi lấy hồ sơ tài khoản', error: err.message });
+    }
+});
+
+router.get('/me/favorites', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId).populate({
+            path: 'favorites',
+            populate: { path: 'ownerId', select: 'name email' }
+        }).select('favorites');
+        if (!user) {
+            return res.status(404).json({ message: 'Không tìm thấy tài khoản!' });
+        }
+        res.status(200).json({ favorites: user.favorites });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi khi lấy danh sách đồ chơi yêu thích', error: err.message });
     }
 });
 
@@ -285,7 +301,7 @@ router.get('/admin/toys', async (req, res) => {
         // Thống kê số lượng tổng quan
         const pendingCount = await Toy.countDocuments({ status: 'pending' });
         const approvedTodayCount = await Toy.countDocuments({ status: { $in: ['approved', 'available'] } });
-        const reportsCount = await Toy.countDocuments({ isReported: true }); 
+        const reportsCount = await Report.countDocuments({ status: { $in: ['open', 'processing'] } });
 
         // 🌟 XỬ LÝ RIÊNG CHO TAB "ĐANG CHO MƯỢN"
         if (status === 'borrowed') {

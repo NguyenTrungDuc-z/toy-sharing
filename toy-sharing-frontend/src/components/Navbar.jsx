@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
 export default function Navbar({ page, setPage, user, handleLogout }) {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -155,6 +155,22 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
         >
           Requests
         </button>
+        {user && (
+          <button
+            onClick={() => setPage("favorites")}
+            style={{
+              color: page === "favorites" ? "var(--primary-color)" : "var(--text-muted)",
+              textDecoration: "none",
+              background: "none",
+              border: "none",
+              fontSize: "16px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            Yêu thích
+          </button>
+        )}
       </div>
 
      

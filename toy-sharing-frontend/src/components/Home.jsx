@@ -8,21 +8,51 @@ export default function Home({ user, setPage }) {
   const [filterCategory, setFilterCategory] = useState('all'); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
+  const [favorites, setFavorites] = useState([]);
+  const [reportToy, setReportToy] = useState(null);
+  const [reportReason, setReportReason] = useState('');
+  const [reportDetails, setReportDetails] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+  const [refreshVersion, setRefreshVersion] = useState(0);
   
   
   const [selectedToyForBorrow, setSelectedToyForBorrow] = useState(null);
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/toys')
+    let active = true;
+    const params = { page: currentPage, limit: 12, sort };
+    if (searchTerm.trim()) params.search = searchTerm.trim();
+    if (filterCategory !== 'all' && filterCategory !== 'Khác') params.category = filterCategory;
+
+    axios.get('http://localhost:5000/api/toys', { params })
       .then(res => {
-        setToys(res.data);
-        setLoading(false);
+        if (!active) return;
+        setToys(res.data.toys || []);
+        setPagination(res.data.pagination || { total: 0, totalPages: 1 });
       })
       .catch(err => {
         console.error("Lỗi lấy dữ liệu:", err);
-        setLoading(false);
+        if (active) setToys([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
-  }, []);
+
+    return () => { active = false; };
+  }, [currentPage, filterCategory, refreshVersion, searchTerm, sort]);
+
+  useEffect(() => {
+    if (!user) return;
+    const token = localStorage.getItem('token');
+    axios.get('http://localhost:5000/api/auth/me/favorites', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(res => setFavorites((res.data.favorites || []).map(toy => toy._id)))
+      .catch(err => console.error('Lỗi lấy danh sách yêu thích:', err));
+  }, [user]);
 
    
    const [toast, setToast] = React.useState(null);
@@ -44,18 +74,56 @@ export default function Home({ user, setPage }) {
      setSelectedToyForBorrow(toy);
    };
    
-   const handleBorrowSuccess = () => {
-     
-     setLoading(true);
-     axios.get('http://localhost:5000/api/toys')
-       .then(res => {
-         setToys(res.data);
-         setLoading(false);
-       })
-       .catch(err => {
-         console.error("Lỗi lấy dữ liệu:", err);
-         setLoading(false);
-       });
+   const handleBorrowSuccess = () => setRefreshVersion(version => version + 1);
+
+   const handleToggleFavorite = async (toy) => {
+     if (!user) {
+       showToast('Đăng nhập để lưu đồ chơi yêu thích.', 'info');
+       setPage('login');
+       return;
+     }
+
+     const token = localStorage.getItem('token');
+     const isFavorite = favorites.includes(toy._id);
+     try {
+       if (isFavorite) {
+         await axios.delete(`http://localhost:5000/api/toys/${toy._id}/favorite`, {
+           headers: { Authorization: `Bearer ${token}` },
+         });
+         setFavorites(current => current.filter(id => id !== toy._id));
+         showToast('Đã xóa khỏi danh sách yêu thích.');
+       } else {
+         await axios.post(`http://localhost:5000/api/toys/${toy._id}/favorite`, {}, {
+           headers: { Authorization: `Bearer ${token}` },
+         });
+         setFavorites(current => [...current, toy._id]);
+         showToast('Đã lưu vào danh sách yêu thích.');
+       }
+     } catch (error) {
+       showToast(error.response?.data?.message || 'Không thể cập nhật danh sách yêu thích.', 'error');
+     }
+   };
+
+   const handleSubmitReport = async (event) => {
+     event.preventDefault();
+     if (!reportToy || !reportReason) return;
+     setActionLoading(true);
+     try {
+       const token = localStorage.getItem('token');
+       const response = await axios.post(
+         `http://localhost:5000/api/toys/${reportToy._id}/report`,
+         { reason: reportReason, details: reportDetails },
+         { headers: { Authorization: `Bearer ${token}` } },
+       );
+       showToast(response.data.message || 'Đã gửi báo cáo.');
+       setReportToy(null);
+       setReportReason('');
+       setReportDetails('');
+     } catch (error) {
+       showToast(error.response?.data?.message || 'Không thể gửi báo cáo.', 'error');
+     } finally {
+       setActionLoading(false);
+     }
    };
 
    
@@ -145,7 +213,7 @@ export default function Home({ user, setPage }) {
             <input
               type="text"
               value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
+              onChange={e => { setCurrentPage(1); setSearchTerm(e.target.value); }}
               placeholder="Bạn đang tìm đồ chơi gì cho bé?"
               style={{
                 width: '100%',
@@ -198,7 +266,7 @@ export default function Home({ user, setPage }) {
           ].map((item) => (
             <button
               key={item.key}
-              onClick={() => setFilterAge(item.key)}
+              onClick={() => { setCurrentPage(1); setFilterAge(item.key); }}
               style={{
                 padding: '10px 28px',
                 borderRadius: '30px',
@@ -233,7 +301,7 @@ export default function Home({ user, setPage }) {
           ].map((cat) => (
             <button
               key={cat.key}
-              onClick={() => setFilterCategory(cat.key)}
+              onClick={() => { setCurrentPage(1); setFilterCategory(cat.key); }}
               style={{
                 padding: '10px 22px',
                 borderRadius: '30px',
@@ -261,6 +329,16 @@ export default function Home({ user, setPage }) {
       <div style={{ margin: '50px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ fontSize: '24px', borderLeft: '6px solid var(--primary-color)', paddingLeft: '15px' }}>Đồ chơi mới cập nhật</h2>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '14px' }}>
+            Sắp xếp
+            <select value={sort} onChange={event => { setCurrentPage(1); setSort(event.target.value); }} style={{ padding: '10px 12px', border: '1px solid #ebdcd0', borderRadius: '10px', background: '#fff', color: 'var(--text-main)' }}>
+              <option value="newest">Mới nhất</option>
+              <option value="oldest">Cũ nhất</option>
+              <option value="name-asc">Tên A-Z</option>
+              <option value="deposit-asc">Tiền cọc thấp nhất</option>
+              <option value="deposit-desc">Tiền cọc cao nhất</option>
+            </select>
+          </label>
         </div>
 
         {filteredToys.length === 0 ? (
@@ -294,6 +372,21 @@ export default function Home({ user, setPage }) {
 
                   </div>
                   <h3 style={{ marginTop: '12px', marginBottom: '6px', fontSize: '18px', fontWeight: '600' }}>{toy.name}</h3>
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                    <button type="button" onClick={() => handleToggleFavorite(toy)} aria-label={favorites.includes(toy._id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'} title={favorites.includes(toy._id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'} style={{ border: '1px solid #ebdcd0', borderRadius: '10px', padding: '7px 10px', background: '#fff', color: favorites.includes(toy._id) ? '#dc2626' : 'var(--text-main)', cursor: 'pointer', fontSize: '14px' }}>
+                      {favorites.includes(toy._id) ? '♥ Đã yêu thích' : '♡ Yêu thích'}
+                    </button>
+                    <button type="button" onClick={() => {
+                      if (!user) {
+                        showToast('Đăng nhập để báo cáo bài đăng.', 'info');
+                        setPage('login');
+                        return;
+                      }
+                      setReportToy(toy);
+                    }} style={{ border: '1px solid #ebdcd0', borderRadius: '10px', padding: '7px 10px', background: '#fff', color: '#9f3a38', cursor: 'pointer', fontSize: '14px' }}>
+                      Báo cáo
+                    </button>
+                  </div>
                   <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px', height: '40px', overflow: 'hidden' }}>
                     {toy.description || "Không có mô tả sản phẩm từ chủ sở hữu."}
                   </p>
@@ -375,6 +468,13 @@ export default function Home({ user, setPage }) {
             ))}
           </div>
         )}
+        {pagination.totalPages > 1 && (
+          <nav aria-label="Phân trang đồ chơi" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '16px', marginTop: '28px', flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => setCurrentPage(page => Math.max(1, page - 1))} disabled={currentPage <= 1} className="btn-secondary" style={{ padding: '9px 16px', opacity: currentPage <= 1 ? 0.5 : 1 }}>Trang trước</button>
+            <span style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Trang {currentPage} / {pagination.totalPages} · {pagination.total} món</span>
+            <button type="button" onClick={() => setCurrentPage(page => Math.min(pagination.totalPages, page + 1))} disabled={currentPage >= pagination.totalPages} className="btn-secondary" style={{ padding: '9px 16px', opacity: currentPage >= pagination.totalPages ? 0.5 : 1 }}>Trang sau</button>
+          </nav>
+        )}
       </div>
 
       
@@ -386,6 +486,34 @@ export default function Home({ user, setPage }) {
         onBorrowSuccess={handleBorrowSuccess}
         showToast={showToast}
       />
+
+      {reportToy && (
+        <div role="presentation" onClick={() => setReportToy(null)} style={{ position: 'fixed', inset: 0, zIndex: 3000, padding: '20px', background: 'rgba(35, 29, 24, 0.48)', display: 'grid', placeItems: 'center' }}>
+          <form onSubmit={handleSubmitReport} onClick={event => event.stopPropagation()} style={{ width: 'min(100%, 520px)', background: '#fff', borderRadius: '16px', padding: '24px', boxShadow: '0 20px 50px rgba(0,0,0,0.18)' }}>
+            <h2 style={{ fontSize: '22px', marginBottom: '6px' }}>Báo cáo bài đăng</h2>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '18px' }}>{reportToy.name}</p>
+            <label style={{ display: 'grid', gap: '7px', marginBottom: '16px', fontSize: '14px', fontWeight: 600 }}>
+              Lý do báo cáo
+              <select required value={reportReason} onChange={event => setReportReason(event.target.value)} style={{ padding: '12px', border: '1px solid #ebdcd0', borderRadius: '10px', background: '#fff' }}>
+                <option value="">Chọn lý do</option>
+                <option value="Nội dung không phù hợp">Nội dung không phù hợp</option>
+                <option value="Thông tin sai lệch">Thông tin sai lệch</option>
+                <option value="Bài đăng trùng lặp">Bài đăng trùng lặp</option>
+                <option value="Dấu hiệu lừa đảo">Dấu hiệu lừa đảo</option>
+                <option value="Khác">Khác</option>
+              </select>
+            </label>
+            <label style={{ display: 'grid', gap: '7px', marginBottom: '20px', fontSize: '14px', fontWeight: 600 }}>
+              Chi tiết (không bắt buộc)
+              <textarea value={reportDetails} onChange={event => setReportDetails(event.target.value)} rows={4} maxLength={1000} style={{ resize: 'vertical', padding: '12px', border: '1px solid #ebdcd0', borderRadius: '10px' }} />
+            </label>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button type="button" onClick={() => setReportToy(null)} className="btn-secondary" style={{ padding: '10px 16px' }}>Hủy</button>
+              <button type="submit" disabled={actionLoading} className="btn-primary" style={{ padding: '10px 16px', background: '#a33b36' }}>{actionLoading ? 'Đang gửi...' : 'Gửi báo cáo'}</button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {toast && (
         <div style={{

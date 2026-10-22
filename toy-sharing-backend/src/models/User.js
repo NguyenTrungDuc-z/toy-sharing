@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   phone: { type: String, required: true },
   address: { type: String },
   avatar: { type: String, default: "" },
+  tokenVersion: { type: Number, default: 0 },
   rating: {
     avg: { type: Number, default: 0 },
     count: { type: Number, default: 0 }

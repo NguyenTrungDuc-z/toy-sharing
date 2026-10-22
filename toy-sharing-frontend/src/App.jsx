@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import './App.css';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
@@ -10,6 +11,7 @@ import Requests from './components/Requests';
 import AdminDashboard from './components/AdminDashboard'; 
 import RoleManagement from './components/RoleManagement'; 
 import ToyModeration from './components/ToyModeration';
+import Profile from './components/Profile';
 
 export default function App() {
   // Trạng thái trang hiện tại: 'home', 'my-toys', 'login', 'register', 'admin-dashboard', 'role-management'
@@ -50,7 +52,18 @@ export default function App() {
   };
 
   // Hàm xử lý Đăng xuất
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        await axios.post('http://localhost:5000/api/auth/logout', {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (error) {
+        console.error('Không thể thu hồi token trên máy chủ:', error);
+      }
+    }
+
     localStorage.clear();
     setUser(null);
     setPage('login');
@@ -87,6 +100,15 @@ export default function App() {
         {page === 'home' && user?.role !== 'admin' && <Home user={user} setPage={navigateTo} />}
         {page === 'my-toys' && user?.role !== 'admin' && <MyToys user={user} setPage={navigateTo} />}
         {page === 'requests' && user?.role !== 'admin' && <Requests user={user} setPage={navigateTo} />}
+        {page === 'profile' && user && user.role !== 'admin' && (
+          <Profile
+            user={user}
+            onUserUpdated={(updatedUser) => {
+              setUser(updatedUser);
+              localStorage.setItem('user', JSON.stringify(updatedUser));
+            }}
+          />
+        )}
         
         {/* 🔓 CÁC TRANG CÔNG CỘNG */}
         {page === 'login' && <Login setPage={navigateTo} setUser={(u) => {

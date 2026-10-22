@@ -1,20 +1,7 @@
 const router = require("express").Router();
 const Toy = require("../models/Toy");
 const User = require("../models/User");
-const jwt = require("jsonwebtoken");
-
-// Middleware xác thực
-const auth = (req, res, next) => {
-  try {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "No token provided" });
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'toyshare_secret');
-    req.userId = decoded.userId;
-    next();
-  } catch (err) {
-    res.status(401).json({ message: "Invalid token" });
-  }
-};
+const auth = require("../middleware/auth");
 
 const getCurrentUserId = (req) => req.userId || req.headers["x-user-id"] || req.query.userId || req.body.userId;
 

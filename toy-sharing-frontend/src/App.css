@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+
+/* Định nghĩa biến dùng chung cho toàn bộ 5 màn hình */
+:root {
+  /* 🔥 HỆ MÀU SẮC ĐÃ SỬA: Chuẩn tone cam đất ấm, độ tương phản cao theo thiết kế */
+  --primary-color: #be6e15;       /* Sửa thành màu cam đất đậm, sắc nét của bản mẫu */
+  --primary-hover: #9c570b;       /* Màu khi di chuột vào sẽ trầm xuống một tông */
+  --bg-main: #fcf8f4;              /* Nền kem pastel mịn màng bọc quanh layout */
+  --bg-card: #ffffff;              
+  --text-main: #423023;            /* Màu chữ nâu cafe đậm giúp giao diện nhìn cực sang */
+  --text-muted: #8a776a;           /* Chữ mô tả phụ, mốc thông tin nhỏ */
+  
+  /* Màu trạng thái đổ từ thiết kế Quản lý yêu cầu & Quản lý đồ chơi */
+  --status-available: #e6f6ee;     /* Xanh lá pastel mềm */
+  --text-available: #15803d;       
+  --status-borrowing: #ede9fe;     /* Tím/Xanh dương pastel nhẹ */
+  --text-borrowing: #6d28d9;
+  --status-pending: #fef3c7;       /* Vàng pastel chờ duyệt */
+  --text-pending: #b45309;
+
+  /* Định dạng cấu trúc giao diện */
+  --font-family: 'Lexend', sans-serif; /* Ép nhận font Lexend tròn trịa, hiện đại */
+  --radius-lg: 28px;               /* Tăng bo góc lên 28px cho đúng độ bo của Card gốc */
+  --radius-md: 16px;               /* Bo góc cho Nút bấm và Ô Input */
+  --shadow-sm: 0 10px 30px rgba(190, 110, 21, 0.04); /* Đổ bóng nhạt theo tone cam chủ đạo */
+}
+
+/* Toàn bộ cấu hình gốc cho trang web */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* --- 🛑 BỘ UI KITS DÙNG CHUNG CHO 5 MÀN HÌNH --- */
+
+/* 1. Nút bấm chuẩn (Bo tròn dẹt mềm mại theo nút "Mượn ngay" trong mẫu) */
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 30px;            /* Ép nút thành dạng viên thuốc giống hệt thiết kế */
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+/* Nút phụ (Màu xanh/xám nhạt pastel như nút "Tìm hiểu thêm") */
+.btn-secondary {
+  background-color: #e2e4ff;
+  color: #4f46e5;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.btn-secondary:hover {
+  background-color: #d1d5ff;
+}
+
+/* 2. Ô nhập liệu chuẩn (Nâng cấp border mượt và nhạt hơn) */
+.form-input {
+  width: 100%;
+  padding: 14px 18px;
+  border: 1px solid #ebdcd0;      /* Border màu kem nhạt đồng điệu */
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  color: var(--text-main);
+  font-size: 15px;
+  outline: none;
+  transition: all 0.2s;
+}
+.form-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(190, 110, 21, 0.1);
+}
+
+/* 3. Thẻ Card chứa đồ chơi (Thêm hiệu ứng hover nhấc mượt mà) */
+.toy-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px;                  /* Thắt chặt padding để ảnh và chữ ôm khít gọn gàng */
+  box-shadow: var(--shadow-sm);
+  border: 1px solid #fcf2e9;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.toy-card:hover {
+  transform: translateY(-6px);     /* Di chuột vào card sẽ nhấc nhẹ lên cực mượt */
+  box-shadow: 0 15px 35px rgba(190, 110, 21, 0.08);
+}
+
+/* 4. Định dạng Tag Trạng thái */
+.badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+.badge-available { background: var(--status-available); color: var(--text-available); }
+.badge-borrowing { background: var(--status-borrowing); color: var(--text-borrowing); }
+.badge-pending { background: var(--status-pending); color: var(--text-pending); }

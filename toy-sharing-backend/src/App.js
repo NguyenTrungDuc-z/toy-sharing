@@ -2,8 +2,8 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
-const Toy = require('./models/Toy'); 
 const User = require('./models/User'); 
+const bcrypt = require('bcryptjs'); 
 
 const path = require('path');
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
@@ -22,22 +22,22 @@ const mapCondition = (cond) => {
     return 'used';
 };
 
-// Hàm khởi tạo tài khoản Admin mặc định hệ thống
+// Hàm khởi tạo tài khoản Admin mặc định hệ thống với mật khẩu băm bcrypt
 async function createAdminAccount() {
     try {
-        // Xóa tài khoản admin cũ bị lưu mật khẩu băm (bcrypt) lỗi trước đó
-        await User.deleteOne({ email: 'admin@toyshare.com' });
+        const salt = await bcrypt.genSalt(10);
+        const hashedAdminPassword = await bcrypt.hash('admin123', salt);
 
-        // Tạo thẳng bằng mật khẩu chuỗi thường 'admin123' giống hệt logic authRoutes của bồ
+        await User.deleteOne({ email: 'admin@toyshare.com' });
         await User.create({
             name: 'Hệ thống Admin',
             email: 'admin@toyshare.com',
-            passwordHash: 'admin123', // Mật khẩu dạng chuỗi thường trực tiếp
+            passwordHash: hashedAdminPassword,
             phone: '0123456789',
             address: 'Hà Nội',
             role: 'admin' 
         });
-        console.log('🚀 Đã làm sạch và khởi tạo lại tài khoản Admin dạng text thường chuẩn! (admin@toyshare.com / admin123)');
+        console.log('🚀 Đã khởi tạo lại tài khoản Admin với mật khẩu băm bcrypt bảo mật! (admin@toyshare.com / admin123)');
     } catch (err) {
         console.error('❌ Lỗi trong quá trình khởi tạo tài khoản Admin:', err.message);
     }
@@ -48,45 +48,16 @@ async function createAdminAccount() {
 // Tuyến đường xử lý mượn trả trả kết quả thành công (201 Created)
 app.use('/api/borrows', require('./routes/borrowRoutes'));
 
-// Tuyến đường xử lý Auth (Đăng ký / Đăng nhập)
+// Tuyến đường xử lý Auth (Đăng ký / Đăng nhập) và quản trị
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin/reports', require('./routes/reportRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+
 // Tuyến đường xử lý đồ chơi (CRUD, mượn trả, quản lý cá nhân)
 app.use('/api/toys', require('./routes/toyRoutes'));
 
-// 🛠️ 4. API ADMIN: Lấy số liệu thống kê tổng quan (Phục vụ Dashboard Quản trị)
-app.get('/api/admin/stats', async (req, res) => {
-    try {
-        const totalToys = await Toy.countDocuments();
-        const totalUsers = await User.countDocuments({ role: 'user' });
-        
-        // Đếm đồ chơi đang sẵn sàng hoặc đang bị mượn trên toàn sàn
-        const availableToys = await Toy.countDocuments({ status: 'available' });
-        const borrowedToys = await Toy.countDocuments({ status: { $in: ['borrowed', 'unavailable'] } });
-
-        res.status(200).json({
-            totalToys,
-            totalUsers,
-            availableToys,
-            borrowedToys
-        });
-    } catch (err) {
-        res.status(500).json({ message: "Lỗi hệ thống khi lấy số liệu thống kê quản trị", error: err.message });
-    }
-});
-
-// 🛠️ 5. API ADMIN: Quyền tối cao cưỡng ép gỡ bỏ bài đăng vi phạm khỏi hệ thống
-app.delete('/api/admin/toys/:id', async (req, res) => {
-    try {
-        const deletedToy = await Toy.findByIdAndDelete(req.params.id);
-        if (!deletedToy) {
-            return res.status(404).json({ message: "Không tìm thấy đồ chơi yêu cầu gỡ bỏ." });
-        }
-        res.status(200).json({ message: "Admin đã gỡ bỏ bài đăng đồ chơi vi phạm thành công!" });
-    } catch (err) {
-        res.status(500).json({ message: "Lỗi hệ thống khi xóa bài đăng đồ chơi", error: err.message });
-    }
-});
+// Tuyến đường xử lý đánh giá & nhận xét đồ chơi
+app.use('/api/reviews', require('./routes/reviewRoutes'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');
@@ -96,6 +67,8 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
+const { autoReturnOverdueBorrows } = require('./services/overdueService');
+
 async function startServer() {
     try {
         // Chờ kết nối thành công tới Database
@@ -103,6 +76,14 @@ async function startServer() {
         
         // Sau đó chạy hàm kiểm tra/tạo tài khoản Admin mặc định
         await createAdminAccount();
+
+        // Kiểm tra và tự động chuyển các lượt mượn quá hạn thành 'đã trả' (returned)
+        await autoReturnOverdueBorrows();
+
+        // Định kỳ quét tự động mỗi 30 giây để xử lý các món quá hạn mượn
+        setInterval(() => {
+            autoReturnOverdueBorrows();
+        }, 30000);
 
         // Cuối cùng mới mở cổng Server lắng nghe kết nối
         app.listen(PORT, () => {

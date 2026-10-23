@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import BorrowRequestModal from './BorrowRequestModal';
+import ToyReviewsModal from './ToyReviewsModal';
 
 export default function Home({ user, setPage }) {
   const [toys, setToys] = useState([]);
@@ -20,6 +21,7 @@ export default function Home({ user, setPage }) {
   
   
   const [selectedToyForBorrow, setSelectedToyForBorrow] = useState(null);
+  const [selectedToyForReviews, setSelectedToyForReviews] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -371,7 +373,29 @@ export default function Home({ user, setPage }) {
                     </span>
 
                   </div>
-                  <h3 style={{ marginTop: '12px', marginBottom: '6px', fontSize: '18px', fontWeight: '600' }}>{toy.name}</h3>
+                  <h3 style={{ marginTop: '12px', marginBottom: '4px', fontSize: '18px', fontWeight: '600' }}>{toy.name}</h3>
+                  <div 
+                    onClick={() => setSelectedToyForReviews(toy)}
+                    title="Nhấn để xem nhận xét từ phụ huynh"
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      marginBottom: '10px', 
+                      cursor: 'pointer',
+                      width: 'fit-content'
+                    }}
+                  >
+                    <span style={{ color: '#f59e0b', fontSize: '13px', fontWeight: '700' }}>
+                      ★ {toy.rating?.avg > 0 ? toy.rating.avg.toFixed(1) : '5.0'}
+                    </span>
+                    <span style={{ fontSize: '12px', color: '#8c7664' }}>
+                      ({toy.rating?.count || 0} đánh giá)
+                    </span>
+                    <span style={{ fontSize: '11px', color: '#85581A', textDecoration: 'underline', marginLeft: '4px' }}>
+                      Xem nhận xét
+                    </span>
+                  </div>
                   <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap' }}>
                     <button type="button" onClick={() => handleToggleFavorite(toy)} aria-label={favorites.includes(toy._id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'} title={favorites.includes(toy._id) ? 'Bỏ yêu thích' : 'Thêm vào yêu thích'} style={{ border: '1px solid #ebdcd0', borderRadius: '10px', padding: '7px 10px', background: '#fff', color: favorites.includes(toy._id) ? '#dc2626' : 'var(--text-main)', cursor: 'pointer', fontSize: '14px' }}>
                       {favorites.includes(toy._id) ? '♥ Đã yêu thích' : '♡ Yêu thích'}
@@ -485,6 +509,12 @@ export default function Home({ user, setPage }) {
         user={user}
         onBorrowSuccess={handleBorrowSuccess}
         showToast={showToast}
+      />
+
+      <ToyReviewsModal
+        isOpen={!!selectedToyForReviews}
+        onClose={() => setSelectedToyForReviews(null)}
+        toy={selectedToyForReviews}
       />
 
       {reportToy && (

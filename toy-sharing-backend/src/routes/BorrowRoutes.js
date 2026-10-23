@@ -19,4 +19,15 @@ router.patch('/:requestId/confirm-return', borrowController.confirmReturnAndRefu
 router.put('/:requestId/approve', borrowController.approveRequest);
 router.put('/:requestId/reject', borrowController.rejectRequest);
 
-module.exports = router;
+// 🌟 ROUTE GIA HẠN / MƯỢN THÊM THỜI GIAN
+router.patch('/:requestId/request-extension', borrowController.requestExtension);
+router.patch('/:requestId/approve-extension', borrowController.approveExtension);
+router.patch('/:requestId/reject-extension', borrowController.rejectExtension);
+
+// 📦 ROUTE BÁO TRẢ ĐỒ (Trả sớm hoặc Trả đúng hạn)
+router.patch('/:requestId/report-return', borrowController.reportReturn);
+
+// ⏰ ROUTE KIỂM TRA QUÁ HẠN & TỰ ĐỘNG CHUYỂN SANG ĐÃ TRẢ
+router.all('/check-overdue', borrowController.checkOverdue);
+
+module.exports = router;

@@ -18,7 +18,22 @@ const borrowRequestSchema = new mongoose.Schema({
   approvedDate: { type: Date },
   dueDate: { type: Date, required: true },
   returnDate: { type: Date },
-  note: { type: String }
+  note: { type: String },
+  extensionStatus: {
+    type: String,
+    enum: ['none', 'pending', 'approved', 'rejected'],
+    default: 'none'
+  },
+  extensionDueDate: { type: Date },
+  extensionReason: { type: String },
+  extensionRequestDate: { type: Date },
+  returnStatus: {
+    type: String,
+    enum: ['none', 'reported_early', 'reported_on_time', 'overdue_returned'],
+    default: 'none'
+  },
+  returnNote: { type: String },
+  returnReportedDate: { type: Date }
 }, { timestamps: true });
 
 module.exports = mongoose.model('BorrowRequest', borrowRequestSchema);

@@ -35,7 +35,7 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
               letterSpacing: "0.5px",
             }}
           >
-            ADMIN PANEL
+            BẢNG QUẢN TRỊ
           </span>
         </div>
 
@@ -121,7 +121,7 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
             cursor: "pointer",
           }}
         >
-          Home
+          Trang chủ
         </button>
         <button
           onClick={() => setPage("my-toys")}
@@ -136,7 +136,7 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
             cursor: "pointer",
           }}
         >
-          My Toys
+          Đồ chơi của tôi
         </button>
         <button
           onClick={() => setPage("requests")}
@@ -153,7 +153,7 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
             cursor: "pointer",
           }}
         >
-          Requests
+          Yêu cầu mượn
         </button>
         {user && (
           <button

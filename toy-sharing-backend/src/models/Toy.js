@@ -10,7 +10,11 @@ const toySchema = new mongoose.Schema({
   images: [{ type: String }],
   status: { type: String, enum: ['available', 'borrowed', 'unavailable', 'pending', 'rejected'], default: 'pending' },
   depositRequired: { type: Number, default: 0 },
-  location: { type: String }
+  location: { type: String },
+  rating: {
+    avg: { type: Number, default: 0 },
+    count: { type: Number, default: 0 }
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Toy', toySchema);

@@ -1,6 +1,7 @@
 const BorrowRequest = require('../models/BorrowRequest');
 const Toy = require('../models/Toy');
 const mongoose = require('mongoose');
+const { autoReturnOverdueBorrows } = require('../services/overdueService');
 
 const getCurrentUserId = (req) => req.userId || req.headers['x-user-id'] || req.query.userId || req.body.borrowerId;
 
@@ -151,6 +152,9 @@ exports.confirmReturnAndRefund = async (req, res) => {
 // 4. CHUNG: Lấy lịch sử mượn đồ
 exports.getBorrowHistory = async (req, res) => {
   try {
+    // Tự động chuyển các lượt mượn quá hạn thành 'returned'
+    await autoReturnOverdueBorrows();
+
     const history = await BorrowRequest.find()
       .populate('toyId', 'name description ageRange depositRequired ownerId status')
       .populate('borrowerId', 'name email phone')
@@ -169,6 +173,9 @@ exports.getMyBorrows = async (req, res) => {
     if (!userId) {
       return res.status(400).json({ message: 'Cần cung cấp userId' });
     }
+
+    // Tự động chuyển các lượt mượn quá hạn thành 'returned'
+    await autoReturnOverdueBorrows();
 
     const requests = await BorrowRequest.find({ borrowerId: userId })
       .populate({
@@ -191,6 +198,9 @@ exports.getIncomingRequests = async (req, res) => {
     if (!userId) {
       return res.status(400).json({ message: 'Cần cung cấp userId' });
     }
+
+    // Tự động chuyển các lượt mượn quá hạn thành 'returned'
+    await autoReturnOverdueBorrows();
 
     const requests = await BorrowRequest.find({ ownerId: userId })
       .populate({
@@ -282,6 +292,9 @@ exports.getUserHistory = async (req, res) => {
       return res.status(400).json({ message: 'Cần cung cấp userId' });
     }
 
+    // Tự động chuyển các lượt mượn quá hạn thành 'returned'
+    await autoReturnOverdueBorrows();
+
     const history = await BorrowRequest.find({
       $or: [{ borrowerId: userId }, { ownerId: userId }],
       status: { $in: ['returned', 'rejected', 'cancelled'] }
@@ -299,5 +312,184 @@ exports.getUserHistory = async (req, res) => {
   } catch (error) {
     console.error('Lỗi khi lấy lịch sử người dùng:', error);
     res.status(500).json({ message: 'Lỗi server khi lấy lịch sử!', error: error.message });
+  }
+};
+
+// 10. NGƯỜI MƯỢN: Gửi yêu cầu gia hạn / mượn thêm thời gian
+exports.requestExtension = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { newDueDate, reason } = req.body;
+    const userId = getCurrentUserId(req);
+
+    if (!userId) {
+      return res.status(400).json({ message: 'Cần cung cấp userId đăng nhập!' });
+    }
+
+    const borrowRequest = await BorrowRequest.findById(requestId);
+    if (!borrowRequest) {
+      return res.status(404).json({ message: 'Không tìm thấy yêu cầu mượn!' });
+    }
+
+    if (borrowRequest.borrowerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Chỉ người đang mượn mới được yêu cầu gia hạn!' });
+    }
+
+    if (borrowRequest.status !== 'borrowing') {
+      return res.status(400).json({ message: 'Chỉ có thể xin mượn thêm khi đồ chơi đang trong trạng thái mượn!' });
+    }
+
+    if (borrowRequest.extensionStatus === 'pending') {
+      return res.status(400).json({ message: 'Bạn đã có yêu cầu gia hạn đang chờ chủ đồ chơi phản hồi!' });
+    }
+
+    if (!newDueDate) {
+      return res.status(400).json({ message: 'Vui lòng chọn ngày gia hạn mới!' });
+    }
+
+    const newDate = new Date(newDueDate);
+    if (isNaN(newDate.getTime())) {
+      return res.status(400).json({ message: 'Ngày gia hạn không hợp lệ!' });
+    }
+
+    if (newDate <= new Date(borrowRequest.dueDate)) {
+      return res.status(400).json({ message: 'Ngày gia hạn mới phải sau ngày hạn trả hiện tại!' });
+    }
+
+    borrowRequest.extensionStatus = 'pending';
+    borrowRequest.extensionDueDate = newDate;
+    borrowRequest.extensionReason = reason ? reason.trim() : '';
+    borrowRequest.extensionRequestDate = new Date();
+    await borrowRequest.save();
+
+    res.status(200).json({
+      message: 'Gửi yêu cầu mượn thêm thành công! Vui lòng chờ chủ đồ duyệt.',
+      data: borrowRequest
+    });
+  } catch (error) {
+    console.error('Lỗi khi xin gia hạn:', error);
+    res.status(500).json({ message: 'Lỗi server khi xin gia hạn!', error: error.message });
+  }
+};
+
+// 11. CHỦ ĐỒ CHƠI: Đồng ý cho người mượn gia hạn thêm
+exports.approveExtension = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = getCurrentUserId(req);
+
+    const borrowRequest = await BorrowRequest.findById(requestId);
+    if (!borrowRequest) {
+      return res.status(404).json({ message: 'Không tìm thấy yêu cầu mượn!' });
+    }
+
+    if (borrowRequest.ownerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Chỉ chủ đồ chơi mới có quyền duyệt gia hạn!' });
+    }
+
+    if (borrowRequest.extensionStatus !== 'pending') {
+      return res.status(400).json({ message: 'Yêu cầu này không có đề nghị gia hạn nào đang chờ duyệt!' });
+    }
+
+    // Cập nhật ngày hạn trả chính thức thành ngày gia hạn mới
+    borrowRequest.dueDate = borrowRequest.extensionDueDate;
+    borrowRequest.extensionStatus = 'approved';
+    await borrowRequest.save();
+
+    res.status(200).json({
+      message: 'Đã chấp thuận gia hạn mượn đồ chơi!',
+      data: borrowRequest
+    });
+  } catch (error) {
+    console.error('Lỗi khi duyệt gia hạn:', error);
+    res.status(500).json({ message: 'Lỗi server khi duyệt gia hạn!', error: error.message });
+  }
+};
+
+// 12. CHỦ ĐỒ CHƠI: Từ chối yêu cầu gia hạn thêm
+exports.rejectExtension = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = getCurrentUserId(req);
+
+    const borrowRequest = await BorrowRequest.findById(requestId);
+    if (!borrowRequest) {
+      return res.status(404).json({ message: 'Không tìm thấy yêu cầu mượn!' });
+    }
+
+    if (borrowRequest.ownerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Chỉ chủ đồ chơi mới có quyền từ chối gia hạn!' });
+    }
+
+    if (borrowRequest.extensionStatus !== 'pending') {
+      return res.status(400).json({ message: 'Yêu cầu này không có đề nghị gia hạn nào đang chờ duyệt!' });
+    }
+
+    borrowRequest.extensionStatus = 'rejected';
+    await borrowRequest.save();
+
+    res.status(200).json({
+      message: 'Đã từ chối yêu cầu gia hạn!',
+      data: borrowRequest
+    });
+  } catch (error) {
+    console.error('Lỗi khi từ chối gia hạn:', error);
+    res.status(500).json({ message: 'Lỗi server khi từ chối gia hạn!', error: error.message });
+  }
+};
+
+// 13. NGƯỜI MƯỢN: Báo trả đồ (Trả sớm hoặc Trả đúng hạn)
+exports.reportReturn = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { returnType, note } = req.body;
+    const userId = getCurrentUserId(req);
+
+    if (!userId) {
+      return res.status(400).json({ message: 'Cần cung cấp userId đăng nhập!' });
+    }
+
+    const borrowRequest = await BorrowRequest.findById(requestId);
+    if (!borrowRequest) {
+      return res.status(404).json({ message: 'Không tìm thấy yêu cầu mượn!' });
+    }
+
+    if (borrowRequest.borrowerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Chỉ người đang mượn mới được gửi thông báo trả đồ!' });
+    }
+
+    if (borrowRequest.status !== 'borrowing') {
+      return res.status(400).json({ message: 'Chỉ có thể báo trả đồ khi đang trong trạng thái mượn đồ!' });
+    }
+
+    const isEarly = returnType === 'early';
+    borrowRequest.returnStatus = isEarly ? 'reported_early' : 'reported_on_time';
+    borrowRequest.returnNote = note ? note.trim() : '';
+    borrowRequest.returnReportedDate = new Date();
+    await borrowRequest.save();
+
+    res.status(200).json({
+      message: isEarly
+        ? 'Đã gửi thông báo TRẢ ĐỒ SỚM đến chủ đồ chơi thành công!'
+        : 'Đã gửi thông báo TRẢ ĐỒ ĐÚNG HẠN đến chủ đồ chơi thành công!',
+      data: borrowRequest
+    });
+  } catch (error) {
+    console.error('Lỗi khi báo trả đồ:', error);
+    res.status(500).json({ message: 'Lỗi server khi báo trả đồ!', error: error.message });
+  }
+};
+
+// 14. KIỂM TRA QUÁ HẠN & TỰ ĐỘNG CHUYỂN SANG ĐÃ TRẢ
+exports.checkOverdue = async (req, res) => {
+  try {
+    const result = await autoReturnOverdueBorrows();
+    res.status(200).json({
+      success: true,
+      message: `Đã kiểm tra quá hạn ngày mượn. Đã chuyển ${result.count} lượt mượn sang 'returned'.`,
+      ...result
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Lỗi server khi kiểm tra quá hạn!', error: error.message });
   }
 };

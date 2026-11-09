@@ -233,6 +233,9 @@ exports.updateToy = async (req, res) => {
         if (toy.ownerId.toString() !== req.userId) {
             return res.status(403).json({ message: "Not authorized" });
         }
+        if (toy.status === 'borrowed') {
+            return res.status(400).json({ message: "Không thể sửa đồ chơi đang được mượn!" });
+        }
 
         const { name, description, category, ageRange, condition, depositRequired, imageUrl, images, location } =
             req.body;
@@ -318,6 +321,15 @@ exports.deleteToy = async (req, res) => {
         });
         if (activeBorrow) {
             return res.status(400).json({ message: "Không thể xóa đồ chơi đang trong quá trình mượn/trả!" });
+        }
+
+        // Chặn xóa khi còn khoản cọc đang được giữ hoặc chờ xác nhận (tránh mất dấu tiền cọc)
+        const pendingDeposit = await BorrowRequest.findOne({
+            toyId: toy._id,
+            depositStatus: { $in: ['awaiting_confirmation', 'held'] }
+        });
+        if (pendingDeposit) {
+            return res.status(400).json({ message: "Không thể xóa đồ chơi khi còn khoản cọc chưa được hoàn tất!" });
         }
 
         await Promise.all([

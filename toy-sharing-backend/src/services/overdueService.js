@@ -26,7 +26,10 @@ const autoReturnOverdueBorrows = async () => {
     for (const req of overdueRequests) {
       req.status = 'returned';
       req.returnDate = req.returnDate || now;
-      req.depositStatus = 'refunded';
+      // Escrow: nếu admin đang giữ cọc thì KHÔNG tự hoàn (admin xử lý sau); dữ liệu cũ giữ hành vi cũ
+      if (req.depositStatus !== 'held') {
+        req.depositStatus = 'refunded';
+      }
       req.returnStatus = 'overdue_returned';
       req.returnNote = req.returnNote 
         ? `${req.returnNote} | [Hệ thống]: Quá hạn ngày mượn, đã tự động chuyển sang Đã trả.`

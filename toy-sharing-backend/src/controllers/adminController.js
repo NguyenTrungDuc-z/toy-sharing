@@ -275,6 +275,14 @@ exports.deleteToy = async (req, res) => {
             return res.status(400).json({ message: "Không thể xóa đồ chơi đang trong quá trình mượn/trả!" });
         }
 
+        const pendingDeposit = await BorrowRequest.findOne({
+            toyId: toy._id,
+            depositStatus: { $in: ['awaiting_confirmation', 'held'] }
+        });
+        if (pendingDeposit) {
+            return res.status(400).json({ message: "Không thể xóa đồ chơi khi còn khoản cọc chưa được hoàn tất!" });
+        }
+
         const Review = require('../models/Review');
         await Promise.all([
             BorrowRequest.deleteMany({ toyId: toy._id }),

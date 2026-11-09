@@ -58,6 +58,7 @@ exports.createRequest = async (req, res) => {
       note,
       status: 'pending',
       depositStatus: 'pending',
+      depositAmount: toy.depositRequired || 0,
       requestDate: new Date(),
     });
 
@@ -76,7 +77,7 @@ exports.createRequest = async (req, res) => {
   }
 };
 
-// 2. CHỦ ĐỒ CHƠI: Xác nhận đã nhận tiền cọc (Offline/Bank)
+// 2. CHỦ ĐỒ CHƠI: Xác nhận giao đồ & bắt đầu lượt mượn (sau khi admin đã giữ cọc)
 exports.confirmDeposit = async (req, res) => {
   try {
     const { requestId } = req.params;
@@ -97,10 +98,16 @@ exports.confirmDeposit = async (req, res) => {
     }
 
     if (request.status !== 'approved' && request.status !== 'pending') {
-      return res.status(400).json({ message: 'Trạng thái không hợp lệ để xác nhận cọc!' });
+      return res.status(400).json({ message: 'Trạng thái không hợp lệ để giao đồ!' });
     }
 
-    request.depositStatus = 'paid';
+    // Escrow: chỉ cho giao đồ khi admin đã xác nhận giữ cọc.
+    // Giữ tương thích với dữ liệu cũ (depositStatus 'paid').
+    const hasDeposit = (toy.depositRequired || 0) > 0;
+    if (hasDeposit && !['held', 'paid'].includes(request.depositStatus)) {
+      return res.status(400).json({ message: 'Admin chưa xác nhận giữ cọc. Vui lòng chờ xác nhận cọc trước khi giao đồ!' });
+    }
+
     request.status = 'borrowing';
     request.approvedDate = request.approvedDate || new Date();
     await request.save();
@@ -116,12 +123,12 @@ exports.confirmDeposit = async (req, res) => {
       userId: request.borrowerId,
       type: 'borrow_approved',
       title: 'Bắt đầu lượt mượn',
-      message: `Chủ đồ chơi đã xác nhận cọc "${toy.name}". Lượt mượn bắt đầu!`,
+      message: `Chủ đồ chơi đã giao "${toy.name}". Lượt mượn bắt đầu!`,
       link: 'requests',
       relatedId: request._id
     });
 
-    res.status(200).json({ message: 'Chủ đồ đã xác nhận nhận cọc! Quá trình mượn bắt đầu.', data: request });
+    res.status(200).json({ message: 'Đã xác nhận giao đồ! Quá trình mượn bắt đầu.', data: request });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
   }
@@ -152,8 +159,13 @@ exports.confirmReturnAndRefund = async (req, res) => {
     }
 
     request.status = 'returned';
-    request.depositStatus = 'refunded';
     request.returnDate = new Date();
+    // Escrow: nếu admin đang giữ cọc ('held'), KHÔNG tự hoàn — admin sẽ xử lý hoàn/trừ.
+    // Dữ liệu cũ (chưa escrow) thì giữ hành vi cũ: tự đánh dấu đã hoàn.
+    const escrowHeld = request.depositStatus === 'held';
+    if (!escrowHeld) {
+      request.depositStatus = 'refunded';
+    }
     await request.save();
 
     // Cập nhật trạng thái toy thành 'available'
@@ -167,13 +179,31 @@ exports.confirmReturnAndRefund = async (req, res) => {
       userId: request.borrowerId,
       type: 'return_confirmed',
       title: 'Đã hoàn tất trả đồ',
-      message: `Chủ đồ chơi đã xác nhận nhận lại "${toy.name}" và hoàn cọc. Hãy để lại đánh giá nhé!`,
+      message: escrowHeld
+        ? `Chủ đồ chơi đã nhận lại "${toy.name}". Admin sẽ xử lý hoàn cọc cho bạn. Hãy để lại đánh giá nhé!`
+        : `Chủ đồ chơi đã xác nhận nhận lại "${toy.name}" và hoàn cọc. Hãy để lại đánh giá nhé!`,
       link: 'requests',
       relatedId: request._id
     });
     await notifyFavoriteAvailable(request.toyId, toy.name);
 
-    res.status(200).json({ message: 'Đã nhận lại đồ chơi và hoàn cọc thành công!', data: request });
+    // Nếu admin đang giữ cọc, nhắc admin xử lý hoàn cọc
+    if (escrowHeld) {
+      const User = require('../models/User');
+      const admins = await User.find({ role: 'admin' }).select('_id');
+      for (const admin of admins) {
+        await createNotification({
+          userId: admin._id,
+          type: 'return_confirmed',
+          title: 'Cọc chờ hoàn trả',
+          message: `"${toy.name}" đã được trả. Vui lòng xử lý hoàn cọc cho người mượn.`,
+          link: 'admin-deposits',
+          relatedId: request._id
+        });
+      }
+    }
+
+    res.status(200).json({ message: escrowHeld ? 'Đã nhận lại đồ chơi! Admin sẽ xử lý hoàn cọc.' : 'Đã nhận lại đồ chơi và hoàn cọc thành công!', data: request });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
   }

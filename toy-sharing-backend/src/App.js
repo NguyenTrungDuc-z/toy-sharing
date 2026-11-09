@@ -19,21 +19,27 @@ const io = new Server(server, { cors: { origin: '*' } });
 global._io = io;
 
 io.on('connection', (socket) => {
-    // Tham gia phòng riêng theo userId để nhận thông báo/tin nhắn
-    socket.on('join', (userId) => {
-        if (userId) socket.join(`user:${userId}`);
-    });
-
-    // Hỗ trợ xác thực qua token (tùy chọn)
+    // Chỉ tham gia phòng riêng theo userId lấy TỪ TOKEN đã xác thực (không tin userId do client gửi)
     const token = socket.handshake.auth?.token;
+    let verifiedUserId = null;
     if (token) {
         try {
             const decoded = jwt.verify(token, process.env.JWT_SECRET || 'toyshare_secret');
-            if (decoded.userId) socket.join(`user:${decoded.userId}`);
+            if (decoded.userId) {
+                verifiedUserId = String(decoded.userId);
+                socket.join(`user:${verifiedUserId}`);
+            }
         } catch {
-            // token không hợp lệ -> bỏ qua, vẫn cho phép join thủ công
+            // token không hợp lệ -> không join phòng nào
         }
     }
+
+    // Chỉ cho join lại đúng phòng của chính mình (phòng trường hợp token xác thực muộn)
+    socket.on('join', (userId) => {
+        if (verifiedUserId && String(userId) === verifiedUserId) {
+            socket.join(`user:${verifiedUserId}`);
+        }
+    });
 });
 
 app.use(cors());
@@ -95,6 +101,9 @@ app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 // Tuyến đường nhắn tin theo đơn mượn
 app.use('/api/messages', require('./routes/messageRoutes'));
+
+// Tuyến đường quản lý tiền cọc (escrow qua VietQR)
+app.use('/api/deposits', require('./routes/depositRoutes'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');

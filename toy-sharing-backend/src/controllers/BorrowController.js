@@ -1,7 +1,9 @@
 const BorrowRequest = require('../models/BorrowRequest');
 const Toy = require('../models/Toy');
+const User = require('../models/User');
 const mongoose = require('mongoose');
 const { autoReturnOverdueBorrows } = require('../services/overdueService');
+const { createNotification, notifyFavoriteAvailable } = require('../services/notificationService');
 
 const getCurrentUserId = (req) => req.userId;
 
@@ -59,6 +61,15 @@ exports.createRequest = async (req, res) => {
       requestDate: new Date(),
     });
 
+    await createNotification({
+      userId: toy.ownerId,
+      type: 'borrow_request',
+      title: 'Yêu cầu mượn mới',
+      message: `Có người muốn mượn "${toy.name}" của bạn.`,
+      link: 'requests',
+      relatedId: newRequest._id
+    });
+
     res.status(201).json({ message: 'Gửi yêu cầu mượn thành công!', data: newRequest });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
@@ -100,6 +111,16 @@ exports.confirmDeposit = async (req, res) => {
       { status: 'borrowed' },
       { new: true }
     );
+
+    await createNotification({
+      userId: request.borrowerId,
+      type: 'borrow_approved',
+      title: 'Bắt đầu lượt mượn',
+      message: `Chủ đồ chơi đã xác nhận cọc "${toy.name}". Lượt mượn bắt đầu!`,
+      link: 'requests',
+      relatedId: request._id
+    });
+
     res.status(200).json({ message: 'Chủ đồ đã xác nhận nhận cọc! Quá trình mượn bắt đầu.', data: request });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
@@ -141,6 +162,17 @@ exports.confirmReturnAndRefund = async (req, res) => {
       { status: 'available' },
       { new: true }
     );
+
+    await createNotification({
+      userId: request.borrowerId,
+      type: 'return_confirmed',
+      title: 'Đã hoàn tất trả đồ',
+      message: `Chủ đồ chơi đã xác nhận nhận lại "${toy.name}" và hoàn cọc. Hãy để lại đánh giá nhé!`,
+      link: 'requests',
+      relatedId: request._id
+    });
+    await notifyFavoriteAvailable(request.toyId, toy.name);
+
     res.status(200).json({ message: 'Đã nhận lại đồ chơi và hoàn cọc thành công!', data: request });
   } catch (error) {
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
@@ -241,10 +273,32 @@ exports.approveRequest = async (req, res) => {
     request.approvedDate = new Date();
     await request.save();
 
+    const autoRejected = await BorrowRequest.find(
+      { toyId: request.toyId, _id: { $ne: request._id }, status: 'pending' }
+    ).select('borrowerId');
     await BorrowRequest.updateMany(
       { toyId: request.toyId, _id: { $ne: request._id }, status: 'pending' },
       { status: 'rejected' }
     );
+
+    await createNotification({
+      userId: request.borrowerId,
+      type: 'borrow_approved',
+      title: 'Yêu cầu được duyệt',
+      message: `Chủ đồ chơi đã duyệt yêu cầu mượn "${toy.name}". Vui lòng liên hệ để nhận đồ.`,
+      link: 'requests',
+      relatedId: request._id
+    });
+    for (const rejected of autoRejected) {
+      await createNotification({
+        userId: rejected.borrowerId,
+        type: 'borrow_rejected',
+        title: 'Yêu cầu bị từ chối',
+        message: `Rất tiếc, "${toy.name}" đã được cho người khác mượn.`,
+        link: 'requests',
+        relatedId: request._id
+      });
+    }
 
     res.status(200).json({ message: 'Đã duyệt yêu cầu mượn!', data: request });
   } catch (error) {
@@ -279,6 +333,15 @@ exports.rejectRequest = async (req, res) => {
     request.status = 'rejected';
     await request.save();
 
+    await createNotification({
+      userId: request.borrowerId,
+      type: 'borrow_rejected',
+      title: 'Yêu cầu bị từ chối',
+      message: `Chủ đồ chơi đã từ chối yêu cầu mượn "${toy.name}".`,
+      link: 'requests',
+      relatedId: request._id
+    });
+
     res.status(200).json({ message: 'Đã từ chối yêu cầu mượn!', data: request });
   } catch (error) {
     console.error('Lỗi khi từ chối yêu cầu:', error);
@@ -307,6 +370,16 @@ exports.cancelRequest = async (req, res) => {
 
     request.status = 'cancelled';
     await request.save();
+
+    const cancelledToy = await Toy.findById(request.toyId).select('name');
+    await createNotification({
+      userId: request.ownerId,
+      type: 'borrow_cancelled',
+      title: 'Yêu cầu bị huỷ',
+      message: `Người mượn đã huỷ yêu cầu mượn "${cancelledToy?.name || 'đồ chơi'}".`,
+      link: 'requests',
+      relatedId: request._id
+    });
 
     res.status(200).json({ message: 'Đã huỷ yêu cầu mượn!', data: request });
   } catch (error) {
@@ -392,6 +465,16 @@ exports.requestExtension = async (req, res) => {
     borrowRequest.extensionRequestDate = new Date();
     await borrowRequest.save();
 
+    const extToy = await Toy.findById(borrowRequest.toyId).select('name');
+    await createNotification({
+      userId: borrowRequest.ownerId,
+      type: 'extension_request',
+      title: 'Yêu cầu gia hạn',
+      message: `Người mượn muốn gia hạn "${extToy?.name || 'đồ chơi'}".`,
+      link: 'requests',
+      relatedId: borrowRequest._id
+    });
+
     res.status(200).json({
       message: 'Gửi yêu cầu mượn thêm thành công! Vui lòng chờ chủ đồ duyệt.',
       data: borrowRequest
@@ -426,6 +509,16 @@ exports.approveExtension = async (req, res) => {
     borrowRequest.extensionStatus = 'approved';
     await borrowRequest.save();
 
+    const apprExtToy = await Toy.findById(borrowRequest.toyId).select('name');
+    await createNotification({
+      userId: borrowRequest.borrowerId,
+      type: 'extension_approved',
+      title: 'Gia hạn được chấp thuận',
+      message: `Chủ đồ chơi đã đồng ý gia hạn "${apprExtToy?.name || 'đồ chơi'}".`,
+      link: 'requests',
+      relatedId: borrowRequest._id
+    });
+
     res.status(200).json({
       message: 'Đã chấp thuận gia hạn mượn đồ chơi!',
       data: borrowRequest
@@ -457,6 +550,16 @@ exports.rejectExtension = async (req, res) => {
 
     borrowRequest.extensionStatus = 'rejected';
     await borrowRequest.save();
+
+    const rejExtToy = await Toy.findById(borrowRequest.toyId).select('name');
+    await createNotification({
+      userId: borrowRequest.borrowerId,
+      type: 'extension_rejected',
+      title: 'Gia hạn bị từ chối',
+      message: `Chủ đồ chơi đã từ chối gia hạn "${rejExtToy?.name || 'đồ chơi'}".`,
+      link: 'requests',
+      relatedId: borrowRequest._id
+    });
 
     res.status(200).json({
       message: 'Đã từ chối yêu cầu gia hạn!',
@@ -497,6 +600,16 @@ exports.reportReturn = async (req, res) => {
     borrowRequest.returnNote = note ? note.trim() : '';
     borrowRequest.returnReportedDate = new Date();
     await borrowRequest.save();
+
+    const retToy = await Toy.findById(borrowRequest.toyId).select('name');
+    await createNotification({
+      userId: borrowRequest.ownerId,
+      type: 'return_reported',
+      title: 'Người mượn báo trả đồ',
+      message: `Người mượn đã báo trả "${retToy?.name || 'đồ chơi'}". Vui lòng xác nhận khi nhận lại đồ.`,
+      link: 'requests',
+      relatedId: borrowRequest._id
+    });
 
     res.status(200).json({
       message: isEarly

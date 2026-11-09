@@ -16,4 +16,7 @@ router.get('/stats', auth, adminOnly, adminController.getOverviewStats);
 // Tuyến đường gỡ bỏ bài đăng vi phạm (/api/admin/toys/:id)
 router.delete('/toys/:id', auth, adminOnly, adminController.deleteToy);
 
+// Tuyến đường quản lý tất cả lượt mượn (/api/admin/borrows)
+router.get('/borrows', auth, adminOnly, adminController.getAllBorrows);
+
 module.exports = router;

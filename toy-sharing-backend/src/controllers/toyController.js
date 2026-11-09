@@ -5,6 +5,7 @@ const Report = require('../models/Report');
 const BorrowRequest = require('../models/BorrowRequest');
 const Review = require('../models/Review');
 const { autoReturnOverdueBorrows } = require('../services/overdueService');
+const { createNotification, notifyFavoriteAvailable } = require('../services/notificationService');
 
 const toySortOptions = {
     newest: { createdAt: -1 },
@@ -25,13 +26,16 @@ const toySortOptions = {
 exports.getAllToys = async (req, res) => {
     try {
         await autoReturnOverdueBorrows();
-        const { search, category, page: pageValue, limit: limitValue, sort: sortValue } = req.query;
+        const { search, category, location, page: pageValue, limit: limitValue, sort: sortValue } = req.query;
         const filter = {
             status: { $in: ['available', 'borrowed', 'unavailable'] }
         };
 
         if (category) {
             filter.category = category;
+        }
+        if (location) {
+            filter.location = { $regex: location, $options: "i" };
         }
         if (search) {
             filter.$or = [
@@ -185,7 +189,7 @@ exports.getPendingToys = async (req, res) => {
 // 7. TẠO TOY MỚI
 exports.createToy = async (req, res) => {
     try {
-        const { name, description, category, ageRange, condition, depositRequired, imageUrl, images } =
+        const { name, description, category, ageRange, condition, depositRequired, imageUrl, images, location } =
             req.body;
 
         // Validate required fields
@@ -209,6 +213,7 @@ exports.createToy = async (req, res) => {
             condition,
             depositRequired: Number(depositRequired) || 0,
             images: finalImages,
+            location: location || '',
             ownerId: req.userId,
             status: "pending",
         });
@@ -229,9 +234,10 @@ exports.updateToy = async (req, res) => {
             return res.status(403).json({ message: "Not authorized" });
         }
 
-        const { name, description, category, ageRange, condition, depositRequired, imageUrl, images } =
+        const { name, description, category, ageRange, condition, depositRequired, imageUrl, images, location } =
             req.body;
         const updateData = { name, description, category, ageRange, condition, depositRequired, status: 'pending' };
+        if (location !== undefined) updateData.location = location;
         if (images) {
             updateData.images = images;
         } else if (imageUrl) {
@@ -265,6 +271,28 @@ exports.moderateToy = async (req, res) => {
             { new: true }
         );
         if (!toy) return res.status(404).json({ message: "Toy not found" });
+
+        if (req.body.status === 'available') {
+            await createNotification({
+                userId: toy.ownerId,
+                type: 'toy_moderated',
+                title: 'Đồ chơi được duyệt',
+                message: `"${toy.name}" đã được duyệt và hiển thị công khai.`,
+                link: 'my-toys',
+                relatedId: toy._id
+            });
+            await notifyFavoriteAvailable(toy._id, toy.name);
+        } else if (req.body.status === 'rejected') {
+            await createNotification({
+                userId: toy.ownerId,
+                type: 'toy_moderated',
+                title: 'Đồ chơi bị từ chối',
+                message: `"${toy.name}" đã bị từ chối. Vui lòng kiểm tra lại thông tin.`,
+                link: 'my-toys',
+                relatedId: toy._id
+            });
+        }
+
         res.json(toy);
     } catch (err) {
         res.status(500).json({ message: "Server error" });

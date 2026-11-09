@@ -3,6 +3,7 @@ const Toy = require('../models/Toy');
 const BorrowRequest = require('../models/BorrowRequest');
 const Report = require('../models/Report');
 const { autoReturnOverdueBorrows } = require('../services/overdueService');
+const { createNotification, notifyFavoriteAvailable } = require('../services/notificationService');
 
 // 1. API LẤY SỐ LIỆU THỐNG KÊ ĐỘNG CHO DASHBOARD (/api/auth/admin/stats)
 exports.getStats = async (req, res) => {
@@ -15,13 +16,14 @@ exports.getStats = async (req, res) => {
 
         const now = new Date();
         const chartData = [];
+        const chartLabels = [];
         for (let i = 3; i >= 0; i--) {
             const cutoff = new Date(now);
             cutoff.setDate(cutoff.getDate() - i * 7);
             const count = await Toy.countDocuments({ createdAt: { $lte: cutoff } });
             chartData.push(count);
+            chartLabels.push(i === 0 ? 'Hôm nay' : `${i * 7} ngày trước`);
         }
-        const dynamicChartData = chartData;
 
         res.status(200).json({
             success: true,
@@ -30,7 +32,8 @@ exports.getStats = async (req, res) => {
                 totalToys,
                 activeLoans,
                 pendingApprovals,
-                chartData: dynamicChartData
+                chartData,
+                chartLabels
             }
         });
     } catch (err) {
@@ -225,6 +228,27 @@ exports.updateToyStatus = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Không tìm thấy đồ chơi!' });
         }
 
+        if (finalStatus === 'available') {
+            await createNotification({
+                userId: updatedToy.ownerId,
+                type: 'toy_moderated',
+                title: 'Đồ chơi được duyệt',
+                message: `"${updatedToy.name}" đã được duyệt và hiển thị công khai.`,
+                link: 'my-toys',
+                relatedId: updatedToy._id
+            });
+            await notifyFavoriteAvailable(updatedToy._id, updatedToy.name);
+        } else if (finalStatus === 'rejected') {
+            await createNotification({
+                userId: updatedToy.ownerId,
+                type: 'toy_moderated',
+                title: 'Đồ chơi bị từ chối',
+                message: `"${updatedToy.name}" đã bị từ chối. Vui lòng kiểm tra lại thông tin.`,
+                link: 'my-toys',
+                relatedId: updatedToy._id
+            });
+        }
+
         res.status(200).json({
             success: true,
             message: `Đã cập nhật trạng thái thành: ${status}`,
@@ -262,5 +286,43 @@ exports.deleteToy = async (req, res) => {
         res.status(200).json({ message: "Admin đã gỡ bỏ bài đăng đồ chơi vi phạm thành công!" });
     } catch (err) {
         res.status(500).json({ message: "Lỗi hệ thống khi xóa bài đăng đồ chơi", error: err.message });
+    }
+};
+
+// 8. API QUẢN LÝ TẤT CẢ LƯỢT MƯỢN (/api/admin/borrows)
+exports.getAllBorrows = async (req, res) => {
+    try {
+        await autoReturnOverdueBorrows();
+        const { status } = req.query;
+
+        const filter = {};
+        if (status && status !== 'all') {
+            if (status === 'overdue') {
+                filter.status = 'borrowing';
+                filter.dueDate = { $lt: new Date() };
+            } else {
+                filter.status = status;
+            }
+        }
+
+        const borrows = await BorrowRequest.find(filter)
+            .populate('toyId', 'name images category')
+            .populate('borrowerId', 'name email phone')
+            .populate('ownerId', 'name email phone')
+            .sort({ createdAt: -1 })
+            .limit(200);
+
+        const now = new Date();
+        const stats = {
+            total: await BorrowRequest.countDocuments(),
+            pending: await BorrowRequest.countDocuments({ status: 'pending' }),
+            borrowing: await BorrowRequest.countDocuments({ status: 'borrowing' }),
+            returned: await BorrowRequest.countDocuments({ status: 'returned' }),
+            overdue: await BorrowRequest.countDocuments({ status: 'borrowing', dueDate: { $lt: now } })
+        };
+
+        res.json({ borrows, stats });
+    } catch (err) {
+        res.status(500).json({ message: "Lỗi khi lấy danh sách lượt mượn", error: err.message });
     }
 };

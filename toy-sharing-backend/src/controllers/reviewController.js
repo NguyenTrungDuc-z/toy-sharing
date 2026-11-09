@@ -3,6 +3,7 @@ const Review = require('../models/Review');
 const Toy = require('../models/Toy');
 const User = require('../models/User');
 const BorrowRequest = require('../models/BorrowRequest');
+const { createNotification } = require('../services/notificationService');
 
 // 1. TẠO ĐÁNH GIÁ MỚI CHO ĐỒ CHƠI
 exports.createReview = async (req, res) => {
@@ -84,6 +85,15 @@ exports.createReview = async (req, res) => {
     const ownerAvg = Number((ownerReviews.reduce((sum, r) => sum + r.rating, 0) / ownerCount).toFixed(1));
     await User.findByIdAndUpdate(toy.ownerId, {
       rating: { avg: ownerAvg, count: ownerCount }
+    });
+
+    await createNotification({
+      userId: toy.ownerId,
+      type: 'new_review',
+      title: 'Đánh giá mới',
+      message: `"${toy.name}" của bạn vừa nhận được đánh giá ${Math.round(numRating)} sao.`,
+      link: 'my-toys',
+      relatedId: toyId
     });
 
     const populatedReview = await Review.findById(newReview._id)

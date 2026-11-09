@@ -125,6 +125,9 @@ app.use('/api/deposits', require('./routes/depositRoutes'));
 // Tuyến đường voucher giảm tiền cọc
 app.use('/api/vouchers', require('./routes/voucherRoutes'));
 
+// Tuyến đường danh mục đồ chơi
+app.use('/api/categories', require('./routes/categoryRoutes'));
+
 app.get('/', (req, res) => {
     res.send('API is running...');
 });

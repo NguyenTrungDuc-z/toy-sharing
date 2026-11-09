@@ -14,9 +14,6 @@ const adminOnly = (req, res, next) => {
 router.get('/:borrowRequestId/qr', auth, depositController.getDepositQR);
 router.post('/:borrowRequestId/report-paid', auth, depositController.reportPaid);
 
-// Chủ đồ chơi báo cáo hư hỏng
-router.post('/:borrowRequestId/report-damage', auth, depositController.reportDamage);
-
 // Admin
 router.get('/admin/all', auth, adminOnly, depositController.listDeposits);
 router.post('/admin/:borrowRequestId/confirm', auth, adminOnly, depositController.confirmReceipt);

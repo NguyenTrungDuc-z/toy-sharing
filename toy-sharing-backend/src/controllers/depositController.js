@@ -95,56 +95,6 @@ exports.reportPaid = async (req, res) => {
     }
 };
 
-// ============ CHỦ ĐỒ CHƠI ============
-
-// Chủ báo cáo hư hỏng/mất mát để admin trừ cọc
-exports.reportDamage = async (req, res) => {
-    try {
-        const { borrowRequestId } = req.params;
-        const { amount, note } = req.body;
-
-        const request = await BorrowRequest.findById(borrowRequestId).populate('toyId', 'name');
-        if (!request) return res.status(404).json({ message: 'Không tìm thấy đơn mượn!' });
-
-        if (request.ownerId.toString() !== req.userId) {
-            return res.status(403).json({ message: 'Chỉ chủ đồ chơi mới được báo cáo hư hỏng!' });
-        }
-
-        if (!['borrowing', 'returned'].includes(request.status)) {
-            return res.status(400).json({ message: 'Chỉ báo cáo hư hỏng khi đang mượn hoặc vừa trả!' });
-        }
-
-        const deposit = request.depositAmount || 0;
-        const numAmount = Number(amount);
-        if (!numAmount || numAmount <= 0 || numAmount > deposit) {
-            return res.status(400).json({ message: `Số tiền đền phải từ 1 đến ${deposit.toLocaleString()}đ (không vượt quá cọc)!` });
-        }
-
-        request.damageReported = true;
-        request.damageAmountRequested = numAmount;
-        request.damageNote = note ? note.trim() : '';
-        await request.save();
-
-        // Thông báo cho admin
-        const User = require('../models/User');
-        const admins = await User.find({ role: 'admin' }).select('_id');
-        for (const admin of admins) {
-            await createNotification({
-                userId: admin._id,
-                type: 'borrow_request',
-                title: 'Báo cáo hư hỏng',
-                message: `Chủ đồ chơi "${request.toyId?.name || ''}" yêu cầu trừ cọc ${numAmount.toLocaleString()}đ.`,
-                link: 'admin-deposits',
-                relatedId: request._id
-            });
-        }
-
-        res.json({ message: 'Đã gửi báo cáo hư hỏng tới admin để xử lý trừ cọc.', data: request });
-    } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
-    }
-};
-
 // ============ ADMIN ============
 
 // Danh sách cọc cần xử lý + đã xử lý
@@ -169,7 +119,8 @@ exports.listDeposits = async (req, res) => {
         const stats = {
             awaiting: await BorrowRequest.countDocuments({ depositStatus: 'awaiting_confirmation' }),
             held: await BorrowRequest.countDocuments({ depositStatus: 'held' }),
-            damageReported: await BorrowRequest.countDocuments({ damageReported: true, depositStatus: 'held' }),
+            claims: await BorrowRequest.countDocuments({ depositStatus: 'held', damageClaimStatus: { $in: ['claimed', 'accepted', 'disputed'] } }),
+            disputed: await BorrowRequest.countDocuments({ depositStatus: 'held', damageClaimStatus: 'disputed' }),
             refunded: await BorrowRequest.countDocuments({ depositStatus: { $in: ['refunded', 'partially_refunded'] } })
         };
 
@@ -230,6 +181,10 @@ exports.refundFull = async (req, res) => {
         if (request.depositStatus !== 'held') {
             return res.status(400).json({ message: 'Chỉ hoàn được cọc đang được giữ!' });
         }
+        // Không cho hoàn 100% khi đang có khiếu nại hư hỏng/mất đồ -> phải dùng "xử lý khiếu nại"
+        if (request.damageClaimStatus !== 'none') {
+            return res.status(400).json({ message: 'Đơn này có khiếu nại đang mở. Vui lòng dùng chức năng "Xử lý khiếu nại"!' });
+        }
         // Cho phép hoàn khi đã trả, hoặc khi đơn bị huỷ/từ chối mà cọc còn giữ.
         if (!['returned', 'rejected', 'cancelled', 'approved'].includes(request.status)) {
             return res.status(400).json({ message: 'Trạng thái đơn không hợp lệ để hoàn cọc!' });
@@ -274,8 +229,13 @@ exports.resolveDamage = async (req, res) => {
         if (request.depositStatus !== 'held') {
             return res.status(400).json({ message: 'Chỉ xử lý được cọc đang được giữ!' });
         }
-        if (request.status !== 'returned') {
-            return res.status(400).json({ message: 'Chỉ trừ cọc đền bù sau khi đồ chơi đã được trả!' });
+        // Chỉ xử lý khi có khiếu nại (hư hỏng/mất đồ) đang chờ
+        if (!['claimed', 'accepted', 'disputed'].includes(request.damageClaimStatus)) {
+            return res.status(400).json({ message: 'Đơn này không có khiếu nại nào để xử lý!' });
+        }
+        // Khiếu nại hư hỏng xảy ra khi đã trả; khai mất đồ khi quá hạn
+        if (!['returned', 'overdue'].includes(request.status)) {
+            return res.status(400).json({ message: 'Trạng thái đơn không hợp lệ để xử lý khiếu nại!' });
         }
 
         const deposit = request.depositAmount || 0;
@@ -285,31 +245,36 @@ exports.resolveDamage = async (req, res) => {
         }
 
         const refund = deposit - deduct;
-        request.depositStatus = 'partially_refunded';
+        request.depositStatus = deduct === 0 ? 'refunded' : 'partially_refunded';
         request.depositDeductAmount = deduct;
         request.depositRefundAmount = refund;
-        request.depositResolveNote = note ? note.trim() : `Trừ ${deduct.toLocaleString()}đ đền chủ đồ chơi`;
+        request.depositResolveNote = note ? note.trim() : (deduct === 0 ? 'Admin phân xử: hoàn đủ cho người mượn' : `Trừ ${deduct.toLocaleString()}đ đền chủ đồ chơi`);
         request.depositResolvedDate = new Date();
+        request.damageClaimStatus = 'resolved';
         await request.save();
 
-        await createNotification({
-            userId: request.ownerId,
-            type: 'return_confirmed',
-            title: 'Nhận tiền đền bù',
-            message: `Admin đã trừ ${deduct.toLocaleString()}đ từ cọc để đền bù cho "${request.toyId?.name || 'đồ chơi'}".`,
-            link: 'requests',
-            relatedId: request._id
-        });
+        if (deduct > 0) {
+            await createNotification({
+                userId: request.ownerId,
+                type: 'return_confirmed',
+                title: 'Nhận tiền đền bù',
+                message: `Admin đã trừ ${deduct.toLocaleString()}đ từ cọc để đền bù cho "${request.toyId?.name || 'đồ chơi'}".`,
+                link: 'requests',
+                relatedId: request._id
+            });
+        }
         await createNotification({
             userId: request.borrowerId,
             type: 'return_confirmed',
-            title: 'Hoàn cọc một phần',
-            message: `Admin đã trừ ${deduct.toLocaleString()}đ tiền đền, hoàn lại ${refund.toLocaleString()}đ cho bạn.`,
+            title: deduct === 0 ? 'Khiếu nại được giải quyết - Hoàn đủ cọc' : 'Hoàn cọc một phần',
+            message: deduct === 0
+                ? `Admin đã phân xử và hoàn lại ĐỦ ${refund.toLocaleString()}đ tiền cọc "${request.toyId?.name || 'đồ chơi'}" cho bạn.`
+                : `Admin đã trừ ${deduct.toLocaleString()}đ tiền đền, hoàn lại ${refund.toLocaleString()}đ cho bạn.`,
             link: 'requests',
             relatedId: request._id
         });
 
-        res.json({ message: `Đã trừ ${deduct.toLocaleString()}đ đền chủ, hoàn ${refund.toLocaleString()}đ cho người mượn.`, data: request });
+        res.json({ message: deduct === 0 ? `Đã hoàn đủ ${refund.toLocaleString()}đ cho người mượn.` : `Đã trừ ${deduct.toLocaleString()}đ đền chủ, hoàn ${refund.toLocaleString()}đ cho người mượn.`, data: request });
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }

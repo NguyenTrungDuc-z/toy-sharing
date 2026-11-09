@@ -21,9 +21,26 @@ const borrowRequestSchema = new mongoose.Schema({
   depositDeductAmount: { type: Number },
   depositResolveNote: { type: String },
   depositResolvedDate: { type: Date },
+
+  // Bằng chứng tình trạng đồ chơi
+  handoverImages: [{ type: String }],   // ảnh lúc chủ giao đồ (trước)
+  returnImages: [{ type: String }],     // ảnh lúc người mượn trả (sau)
+
+  // Khiếu nại hư hỏng (dispute)
+  damageClaimStatus: {
+    type: String,
+    enum: ['none', 'claimed', 'accepted', 'disputed', 'resolved'],
+    default: 'none'
+  },
   damageReported: { type: Boolean, default: false },
   damageNote: { type: String },
   damageAmountRequested: { type: Number },
+  damageImages: [{ type: String }],       // ảnh hư hỏng do chủ cung cấp
+  isLostClaim: { type: Boolean, default: false }, // khai báo mất đồ (không trả)
+  damageClaimDate: { type: Date },
+  borrowerDisputeNote: { type: String },
+  borrowerDisputeImages: [{ type: String }],
+  borrowerResponseDate: { type: Date },
   requestDate: { type: Date, default: Date.now },
   approvedDate: { type: Date },
   dueDate: { type: Date, required: true },

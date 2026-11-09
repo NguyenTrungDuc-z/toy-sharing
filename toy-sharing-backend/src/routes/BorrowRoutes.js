@@ -12,6 +12,7 @@ router.get('/user-history', auth, borrowController.getUserHistory);
 
 router.patch('/:requestId/confirm-deposit', auth, borrowController.confirmDeposit);
 router.patch('/:requestId/confirm-return', auth, borrowController.confirmReturnAndRefund);
+router.patch('/:requestId/respond-claim', auth, borrowController.respondToDamageClaim);
 
 router.put('/:requestId/approve', auth, borrowController.approveRequest);
 router.put('/:requestId/reject', auth, borrowController.rejectRequest);

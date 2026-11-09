@@ -15,11 +15,17 @@ const reviewSchema = new mongoose.Schema({
     ref: 'User', 
     required: true 
   },
-  targetOwnerId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
+  targetOwnerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   },
-  rating: { 
+  // Chiều đánh giá: người mượn chấm chủ/đồ chơi, hoặc chủ chấm người mượn
+  direction: {
+    type: String,
+    enum: ['borrower_to_owner', 'owner_to_borrower'],
+    default: 'borrower_to_owner'
+  },
+  rating: {
     type: Number, 
     required: true, 
     min: 1, 

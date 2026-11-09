@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
-  App, Tabs, Segmented, Card, Button, Tag, Avatar, Typography, Empty, Spin, Flex, Badge, Alert, Space,
+  App, Tabs, Segmented, Card, Button, Tag, Avatar, Typography, Empty, Spin, Flex, Badge, Alert, Space, Rate,
 } from 'antd';
 import {
   MessageOutlined, ShoppingOutlined, InboxOutlined, HistoryOutlined, GiftOutlined,
@@ -38,6 +38,7 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [reviewedRequestIds, setReviewedRequestIds] = useState([]);
   const [selectedRequestForReview, setSelectedRequestForReview] = useState(null);
+  const [ownerReviewItem, setOwnerReviewItem] = useState(null);
   const [selectedRequestForAction, setSelectedRequestForAction] = useState(null);
   const [chatRequest, setChatRequest] = useState(null);
   const [depositRequest, setDepositRequest] = useState(null);
@@ -142,6 +143,9 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
         {item.damageClaimStatus === 'disputed' && <Text type="danger" style={{ fontSize: 12 }}>Đang tranh chấp - chờ admin</Text>}
         {item.depositStatus === 'held' && item.damageClaimStatus === 'none' && <Text type="warning" style={{ fontSize: 12 }}>Admin đang xử lý hoàn cọc</Text>}
         {['refunded', 'partially_refunded'].includes(item.depositStatus) && item.depositDeductAmount > 0 && <Text type="success" style={{ fontSize: 12 }}>Nhận đền {item.depositDeductAmount.toLocaleString()}đ</Text>}
+        {reviewedRequestIds.includes(item._id)
+          ? <Text type="secondary" style={{ fontSize: 12 }}>Đã đánh giá người mượn</Text>
+          : <Button size="small" type="primary" onClick={() => setOwnerReviewItem(item)}>Đánh giá người mượn</Button>}
       </Space>
     );
     return null;
@@ -253,6 +257,15 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
                           {activeTab === 'incoming' ? `Người mượn: ${item.borrowerId?.name || 'Ẩn danh'}`
                             : `Chủ sở hữu: ${item.toyId?.ownerId?.name || item.ownerId?.name || 'Ẩn danh'}`}
                         </div>
+                        {activeTab === 'incoming' && item.borrowerId?.rating?.count > 0 && (
+                          <Flex align="center" gap={6} style={{ marginTop: 2 }}>
+                            <Rate disabled allowHalf value={item.borrowerId.rating.avg} style={{ fontSize: 12 }} />
+                            <Text type="secondary" style={{ fontSize: 12 }}>{item.borrowerId.rating.avg} ({item.borrowerId.rating.count} lượt)</Text>
+                          </Flex>
+                        )}
+                        {activeTab === 'incoming' && !(item.borrowerId?.rating?.count > 0) && (
+                          <Text type="secondary" style={{ fontSize: 12 }}>Người mượn chưa có đánh giá</Text>
+                        )}
                       </div>
                       {statusTag(item)}
                     </Flex>
@@ -280,6 +293,10 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
       <ReviewModal isOpen={!!selectedRequestForReview} onClose={() => setSelectedRequestForReview(null)}
         toy={selectedRequestForReview?.toyId} borrowRequestId={selectedRequestForReview?._id} showToast={showToast}
         onSuccess={() => { if (selectedRequestForReview) setReviewedRequestIds(prev => [...prev, selectedRequestForReview._id]); }} />
+      <ReviewModal isOpen={!!ownerReviewItem} onClose={() => setOwnerReviewItem(null)}
+        toy={ownerReviewItem?.toyId} borrowRequestId={ownerReviewItem?._id} mode="owner"
+        targetName={ownerReviewItem?.borrowerId?.name} showToast={showToast}
+        onSuccess={() => { if (ownerReviewItem) setReviewedRequestIds(prev => [...prev, ownerReviewItem._id]); }} />
       <BorrowActionModal isOpen={!!selectedRequestForAction} onClose={() => setSelectedRequestForAction(null)} item={selectedRequestForAction} showToast={showToast} onSuccess={refreshCurrentTab} />
       <DepositModal isOpen={!!depositRequest} onClose={() => setDepositRequest(null)} borrowRequest={depositRequest} showToast={showToast} onSuccess={refreshCurrentTab} />
       <HandoverModal isOpen={!!handoverItem} onClose={() => setHandoverItem(null)} item={handoverItem} showToast={showToast} onSuccess={refreshCurrentTab} />

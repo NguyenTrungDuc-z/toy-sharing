@@ -30,11 +30,6 @@ exports.createReview = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy đồ chơi!' });
     }
 
-    // Không cho phép tự đánh giá đồ chơi của chính mình
-    if (toy.ownerId.toString() === reviewerId) {
-      return res.status(400).json({ message: 'Bạn không thể tự đánh giá đồ chơi của chính mình!' });
-    }
-
     if (!borrowRequestId) {
       return res.status(400).json({ message: 'Cần cung cấp mã yêu cầu mượn (borrowRequestId)!' });
     }
@@ -48,15 +43,24 @@ exports.createReview = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy yêu cầu mượn tương ứng!' });
     }
 
-    if (borrowRequest.borrowerId.toString() !== reviewerId) {
-      return res.status(403).json({ message: 'Bạn không phải là người mượn đơn này!' });
+    // Xác định chiều đánh giá dựa trên người gửi:
+    // - Người mượn -> chấm chủ & đồ chơi (borrower_to_owner)
+    // - Chủ đồ chơi -> chấm người mượn (owner_to_borrower)
+    const isBorrower = borrowRequest.borrowerId.toString() === reviewerId;
+    const isOwner = borrowRequest.ownerId.toString() === reviewerId;
+    if (!isBorrower && !isOwner) {
+      return res.status(403).json({ message: 'Bạn không liên quan đến lượt mượn này!' });
     }
+
+    const direction = isBorrower ? 'borrower_to_owner' : 'owner_to_borrower';
+    const targetUserId = isBorrower ? borrowRequest.ownerId : borrowRequest.borrowerId;
 
     if (borrowRequest.status !== 'returned') {
       return res.status(400).json({ message: 'Chỉ được đánh giá sau khi đã trả đồ chơi!' });
     }
 
-    const existingReview = await Review.findOne({ borrowRequestId });
+    // Mỗi người chỉ đánh giá lượt mượn này một lần (nhưng cả hai chiều đều được phép)
+    const existingReview = await Review.findOne({ borrowRequestId, reviewerId });
     if (existingReview) {
       return res.status(400).json({ message: 'Bạn đã gửi đánh giá cho lượt mượn này rồi!' });
     }
@@ -66,34 +70,36 @@ exports.createReview = async (req, res) => {
       toyId,
       borrowRequestId: borrowRequestId || null,
       reviewerId,
-      targetOwnerId: toy.ownerId,
+      targetOwnerId: targetUserId,
+      direction,
       rating: Math.round(numRating),
       comment: comment.trim()
     });
 
-    // Cập nhật lại điểm trung bình đánh giá cho Đồ chơi (Toy)
-    const toyReviews = await Review.find({ toyId });
-    const toyCount = toyReviews.length;
-    const toyAvg = Number((toyReviews.reduce((sum, r) => sum + r.rating, 0) / toyCount).toFixed(1));
-    await Toy.findByIdAndUpdate(toyId, {
-      rating: { avg: toyAvg, count: toyCount }
-    });
+    // Chỉ cập nhật điểm đồ chơi khi là đánh giá của người mượn về đồ chơi
+    let toyAvg, toyCount;
+    if (direction === 'borrower_to_owner') {
+      const toyReviews = await Review.find({ toyId, direction: { $ne: 'owner_to_borrower' } });
+      toyCount = toyReviews.length;
+      toyAvg = toyCount ? Number((toyReviews.reduce((sum, r) => sum + r.rating, 0) / toyCount).toFixed(1)) : 0;
+      await Toy.findByIdAndUpdate(toyId, { rating: { avg: toyAvg, count: toyCount } });
+    }
 
-    // Cập nhật lại điểm trung bình đánh giá cho Chủ đồ chơi (User)
-    const ownerReviews = await Review.find({ targetOwnerId: toy.ownerId });
-    const ownerCount = ownerReviews.length;
-    const ownerAvg = Number((ownerReviews.reduce((sum, r) => sum + r.rating, 0) / ownerCount).toFixed(1));
-    await User.findByIdAndUpdate(toy.ownerId, {
-      rating: { avg: ownerAvg, count: ownerCount }
-    });
+    // Cập nhật điểm trung bình cho người được đánh giá (chủ hoặc người mượn)
+    const targetReviews = await Review.find({ targetOwnerId: targetUserId });
+    const targetCount = targetReviews.length;
+    const targetAvg = Number((targetReviews.reduce((sum, r) => sum + r.rating, 0) / targetCount).toFixed(1));
+    await User.findByIdAndUpdate(targetUserId, { rating: { avg: targetAvg, count: targetCount } });
 
     await createNotification({
-      userId: toy.ownerId,
+      userId: targetUserId,
       type: 'new_review',
       title: 'Đánh giá mới',
-      message: `"${toy.name}" của bạn vừa nhận được đánh giá ${Math.round(numRating)} sao.`,
-      link: 'my-toys',
-      relatedId: toyId
+      message: direction === 'borrower_to_owner'
+        ? `"${toy.name}" của bạn vừa nhận được đánh giá ${Math.round(numRating)} sao.`
+        : `Bạn vừa nhận được đánh giá ${Math.round(numRating)} sao từ chủ đồ chơi "${toy.name}".`,
+      link: direction === 'borrower_to_owner' ? 'my-toys' : 'requests',
+      relatedId: direction === 'borrower_to_owner' ? toyId : borrowRequest._id
     });
 
     const populatedReview = await Review.findById(newReview._id)
@@ -102,7 +108,8 @@ exports.createReview = async (req, res) => {
     res.status(201).json({
       message: 'Gửi đánh giá và nhận xét thành công!',
       review: populatedReview,
-      toyRating: { avg: toyAvg, count: toyCount }
+      direction,
+      ...(direction === 'borrower_to_owner' ? { toyRating: { avg: toyAvg, count: toyCount } } : {})
     });
   } catch (err) {
     res.status(500).json({ message: 'Lỗi server khi gửi đánh giá', error: err.message });
@@ -117,7 +124,7 @@ exports.getReviewsByToy = async (req, res) => {
       return res.status(400).json({ message: 'Mã đồ chơi không hợp lệ!' });
     }
 
-    const reviews = await Review.find({ toyId })
+    const reviews = await Review.find({ toyId, direction: { $ne: 'owner_to_borrower' } })
       .populate('reviewerId', 'name avatar')
       .sort({ createdAt: -1 });
 
@@ -170,8 +177,8 @@ exports.deleteReview = async (req, res) => {
 
     await Review.findByIdAndDelete(id);
 
-    // Tính toán lại điểm sau khi xóa
-    const toyReviews = await Review.find({ toyId: review.toyId });
+    // Tính toán lại điểm sau khi xóa (điểm đồ chơi chỉ tính đánh giá về đồ chơi)
+    const toyReviews = await Review.find({ toyId: review.toyId, direction: { $ne: 'owner_to_borrower' } });
     const toyCount = toyReviews.length;
     const toyAvg = toyCount > 0 
       ? Number((toyReviews.reduce((sum, r) => sum + r.rating, 0) / toyCount).toFixed(1)) 

@@ -438,7 +438,7 @@ exports.getIncomingRequests = async (req, res) => {
         path: 'toyId',
         select: 'name images ownerId depositRequired status',
       })
-      .populate('borrowerId', 'name email')
+      .populate('borrowerId', 'name email rating')
       .sort({ createdAt: -1, _id: -1 });
 
     res.status(200).json(requests);

@@ -1,0 +1,75 @@
+{
+  "project": "ToyShare - Nền tảng chia sẻ đồ chơi",
+  "updated": "2026-11-09",
+  "branch": "ducmanh",
+  "sections": [
+    {
+      "section": "EXISTING - Tính năng đã có",
+      "features": [
+        { "id": "E01", "group": "Guest", "feature": "Xem danh sách đồ chơi (trang chủ) + tìm kiếm theo tên", "status": "done" },
+        { "id": "E02", "group": "Guest", "feature": "Lọc theo độ tuổi, danh mục + sắp xếp", "status": "done" },
+        { "id": "E03", "group": "Guest", "feature": "Phân trang (pagination)", "status": "done" },
+        { "id": "E04", "group": "Guest", "feature": "Xem đánh giá (reviews) của đồ chơi", "status": "done" },
+        { "id": "E05", "group": "Guest", "feature": "Đăng ký tài khoản", "status": "done" },
+        { "id": "E06", "group": "Guest", "feature": "Đăng nhập", "status": "done" },
+        { "id": "E07", "group": "Owner", "feature": "Đăng đồ chơi mới (ảnh, tên, danh mục, độ tuổi, tình trạng, tiền cọc, mô tả)", "status": "done" },
+        { "id": "E08", "group": "Owner", "feature": "Sửa / Xóa đồ chơi (chặn xóa khi đang mượn)", "status": "done" },
+        { "id": "E09", "group": "Owner", "feature": "Xem danh sách đồ chơi của mình + thống kê", "status": "done" },
+        { "id": "E10", "group": "Owner", "feature": "Duyệt / Từ chối yêu cầu mượn", "status": "done" },
+        { "id": "E11", "group": "Owner", "feature": "Xác nhận cọc + Xác nhận trả", "status": "done" },
+        { "id": "E12", "group": "Owner", "feature": "Duyệt / Từ chối gia hạn", "status": "done" },
+        { "id": "E13", "group": "Borrower", "feature": "Gửi yêu cầu mượn đồ chơi", "status": "done" },
+        { "id": "E14", "group": "Borrower", "feature": "Hủy yêu cầu mượn (pending)", "status": "done" },
+        { "id": "E15", "group": "Borrower", "feature": "Yêu cầu gia hạn", "status": "done" },
+        { "id": "E16", "group": "Borrower", "feature": "Báo trả đồ chơi", "status": "done" },
+        { "id": "E17", "group": "Borrower", "feature": "Đánh giá sau khi trả (rating + comment)", "status": "done" },
+        { "id": "E18", "group": "Borrower", "feature": "Thêm / Bỏ đồ chơi yêu thích", "status": "done" },
+        { "id": "E19", "group": "Borrower", "feature": "Báo cáo vi phạm (report)", "status": "done" },
+        { "id": "E20", "group": "Account", "feature": "Xem + Sửa hồ sơ (tên, SĐT, địa chỉ, avatar URL)", "status": "done" },
+        { "id": "E21", "group": "Account", "feature": "Đổi mật khẩu", "status": "done" },
+        { "id": "E22", "group": "Admin", "feature": "Dashboard thống kê (users, toys, borrows, pending + biểu đồ)", "status": "done" },
+        { "id": "E23", "group": "Admin", "feature": "Quản lý người dùng (xem, phân quyền, khóa/mở tài khoản)", "status": "done" },
+        { "id": "E24", "group": "Admin", "feature": "Kiểm duyệt bài đăng (duyệt/từ chối toy pending)", "status": "done" },
+        { "id": "E25", "group": "Admin", "feature": "Xử lý báo cáo vi phạm (open/processing/closed/dismissed + ghi chú)", "status": "done" },
+        { "id": "E26", "group": "Admin", "feature": "Gỡ đồ chơi vi phạm", "status": "done" },
+        { "id": "E27", "group": "System", "feature": "JWT authentication + middleware bảo mật", "status": "done" },
+        { "id": "E28", "group": "System", "feature": "Auto-overdue check (mỗi 30s)", "status": "done" },
+        { "id": "E29", "group": "System", "feature": "Auto-reject pending requests khi approve 1 request", "status": "done" },
+        { "id": "E30", "group": "System", "feature": "Cascade delete (xóa toy -> xóa borrow, review, report, favorite)", "status": "done" }
+      ]
+    },
+    {
+      "section": "GROUP A - Hoàn thiện UI có sẵn (ưu tiên cao, nhanh)",
+      "features": [
+        { "id": "A1", "feature": "Trang chi tiết đồ chơi (ToyDetail page)", "description": "API GET /toys/:id đã có, cần UI hiển thị ảnh lớn, thông tin owner, reviews, nút mượn", "effort": "medium", "status": "not-started" },
+        { "id": "A2", "feature": "Điểm uy tín thực (real reputation score)", "description": "MyToys.jsx hardcode 4.9/5.0, cần lấy rating thực từ User model", "effort": "low", "status": "not-started" },
+        { "id": "A3", "feature": "Quên mật khẩu (Forgot Password)", "description": "Login đang chỉ show toast, cần flow reset qua email (nodemailer). Dev mode: log link ra console", "effort": "high", "status": "not-started" },
+        { "id": "A4", "feature": "Hiện/ẩn mật khẩu (Toggle password visibility)", "description": "Icon mắt trong Login.jsx không hoạt động, cần wire lên toggle type password/text", "effort": "low", "status": "not-started" },
+        { "id": "A5", "feature": "Upload nhiều ảnh (Multiple images)", "description": "Form giới hạn 1 ảnh, images[] đã là array. Cho upload 3-5 ảnh với preview", "effort": "medium", "status": "not-started" },
+        { "id": "A6", "feature": "Thêm Vị trí (Location filter)", "description": "Schema Toy.location đã có nhưng form không set. Thêm vào form + bộ lọc location trên Home", "effort": "medium", "status": "not-started" },
+        { "id": "A7", "feature": "Upload avatar (file upload)", "description": "Profile chỉ nhận URL, thêm upload file base64 giống ToyFormModal", "effort": "low", "status": "not-started" },
+        { "id": "A8", "feature": "Thêm tình trạng 'Như mới' (like_new)", "description": "Form có option 'Như mới' nhưng backend lưu 'new'. Thêm like_new vào Toy schema enum", "effort": "low", "status": "not-started" },
+        { "id": "A9", "feature": "Chart labels động (dynamic chart labels)", "description": "Dashboard chart labels hardcode ['Ngày 1','Ngày 10',...], backend cần trả labels cùng data", "effort": "low", "status": "not-started" }
+      ]
+    },
+    {
+      "section": "GROUP B - Module mới (app đầy đặn hơn)",
+      "features": [
+        { "id": "B1", "feature": "Thông báo trong app (Notifications)", "description": "Model Notification + icon chuông + badge unread. Trigger: mượn/duyệt/từ chối/gia hạn/trả/quá hạn", "effort": "high", "status": "not-started" },
+        { "id": "B2", "feature": "Thông báo toy yêu thích sẵn sàng", "description": "Khi toy trong favorites chuyển available -> tạo notification cho user đã thích", "effort": "medium", "status": "not-started" },
+        { "id": "B3", "feature": "Trang hồ sơ công khai (Public Owner Profile)", "description": "Xem toys, rating, reviews của 1 user. Link từ trang chi tiết đồ chơi", "effort": "medium", "status": "not-started" },
+        { "id": "B4", "feature": "Nhắn tin theo đơn mượn (Messaging)", "description": "Model Message theo borrowRequestId, chat giữa owner và borrower", "effort": "high", "status": "not-started" },
+        { "id": "B5", "feature": "Thống kê cá nhân trên Profile", "description": "Số đồ đã mượn, đã cho mượn, tỉ lệ trả đúng hạn, tổng reviews", "effort": "medium", "status": "not-started" },
+        { "id": "B6", "feature": "Admin: Quản lý tất cả đơn mượn", "description": "Xem toàn bộ borrows + filter quá hạn + thống kê thêm (biểu đồ theo category, status)", "effort": "high", "status": "not-started" }
+      ]
+    },
+    {
+      "section": "GROUP C - Cần dịch vụ bên ngoài",
+      "features": [
+        { "id": "C1", "feature": "Google / Facebook Login (OAuth)", "description": "Cần OAuth client IDs từ Google/Facebook Developer Console. Nếu không có thì xóa nút giả", "effort": "high", "dependency": "OAuth credentials", "status": "not-started" },
+        { "id": "C2", "feature": "Thanh toán cọc online (VNPay/MoMo)", "description": "Tích hợp cổng thanh toán sandbox cho tiền cọc", "effort": "very-high", "dependency": "VNPay/MoMo sandbox keys", "status": "not-started" },
+        { "id": "C3", "feature": "Realtime (Socket.IO)", "description": "WebSocket cho chat realtime + push notifications", "effort": "high", "dependency": "Socket.IO setup", "status": "not-started" }
+      ]
+    }
+  ]
+}

@@ -1,14 +1,40 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
-const User = require('./models/User'); 
-const bcrypt = require('bcryptjs'); 
+const User = require('./models/User');
+const bcrypt = require('bcryptjs');
 
 const path = require('path');
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
+const server = http.createServer(app);
+
+// ==================== SOCKET.IO (realtime thông báo & chat) ====================
+const io = new Server(server, { cors: { origin: '*' } });
+global._io = io;
+
+io.on('connection', (socket) => {
+    // Tham gia phòng riêng theo userId để nhận thông báo/tin nhắn
+    socket.on('join', (userId) => {
+        if (userId) socket.join(`user:${userId}`);
+    });
+
+    // Hỗ trợ xác thực qua token (tùy chọn)
+    const token = socket.handshake.auth?.token;
+    if (token) {
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'toyshare_secret');
+            if (decoded.userId) socket.join(`user:${decoded.userId}`);
+        } catch {
+            // token không hợp lệ -> bỏ qua, vẫn cho phép join thủ công
+        }
+    }
+});
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
@@ -61,6 +87,15 @@ app.use('/api/toys', require('./routes/toyRoutes'));
 // Tuyến đường xử lý đánh giá & nhận xét đồ chơi
 app.use('/api/reviews', require('./routes/reviewRoutes'));
 
+// Tuyến đường hồ sơ công khai & thống kê người dùng
+app.use('/api/users', require('./routes/userRoutes'));
+
+// Tuyến đường thông báo trong ứng dụng
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+
+// Tuyến đường nhắn tin theo đơn mượn
+app.use('/api/messages', require('./routes/messageRoutes'));
+
 app.get('/', (req, res) => {
     res.send('API is running...');
 });
@@ -87,9 +122,9 @@ async function startServer() {
             autoReturnOverdueBorrows();
         }, 30000);
 
-        // Cuối cùng mới mở cổng Server lắng nghe kết nối
-        app.listen(PORT, () => {
-            console.log(`Server running on port ${PORT}`);
+        // Cuối cùng mới mở cổng Server lắng nghe kết nối (dùng http server để hỗ trợ socket.io)
+        server.listen(PORT, () => {
+            console.log(`Server running on port ${PORT} (REST + Socket.IO)`);
         });
     } catch (error) {
         console.error(" Không thể khởi động server do lỗi kết nối:", error.message);

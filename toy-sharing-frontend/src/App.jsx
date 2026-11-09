@@ -20,7 +20,9 @@ import PublicProfile from './components/PublicProfile';
 import AdminBorrows from './components/AdminBorrows';
 import AdminDeposits from './components/AdminDeposits';
 import VoucherManagement from './components/VoucherManagement';
+import CategoryManagement from './components/CategoryManagement';
 import ForgotPassword from './components/ForgotPassword';
+import VerifyEmail from './components/VerifyEmail';
 
 export default function App() {
   // Trạng thái trang hiện tại: 'home', 'my-toys', 'login', 'register', 'admin-dashboard', 'role-management'
@@ -59,6 +61,12 @@ export default function App() {
       const urlPage = urlParams.get('page');
       const urlToken = urlParams.get('token');
       const urlEmail = urlParams.get('email');
+
+      if (urlPage === 'verify-email') {
+        setResetParams({ token: urlToken || '', email: urlEmail || '' });
+        setPage('verify-email');
+        return;
+      }
 
       if (urlPage === 'forgot-password' || (urlToken && urlEmail)) {
         setPage('forgot-password');
@@ -103,7 +111,7 @@ export default function App() {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        await axios.post('http://localhost:5000/api/auth/logout', {}, {
+        await axios.post('/api/auth/logout', {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
       } catch (error) {
@@ -177,7 +185,11 @@ export default function App() {
             initialEmail={resetParams.email}
           />
         )}
-        
+
+        {page === 'verify-email' && (
+          <VerifyEmail setPage={navigateTo} token={resetParams.token} email={resetParams.email} />
+        )}
+
         {/* KHỐI TRANG CỦA ADMIN: Chỉ mở khi đúng quyền admin */}
         {page === 'admin-dashboard' && user?.role === 'admin' && (
           <AdminDashboard setPage={navigateTo} />
@@ -206,6 +218,10 @@ export default function App() {
 
         {page === 'admin-vouchers' && user?.role === 'admin' && (
           <VoucherManagement setPage={navigateTo} />
+        )}
+
+        {page === 'admin-categories' && user?.role === 'admin' && (
+          <CategoryManagement setPage={navigateTo} />
         )}
 
       </Layout.Content>

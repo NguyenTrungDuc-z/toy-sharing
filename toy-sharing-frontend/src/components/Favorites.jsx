@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Row, Col, Card, Button, Typography, Empty, Spin, Flex, Alert } from 'antd';
 import { HeartFilled, GiftOutlined } from '@ant-design/icons';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = ''; // axios đã có baseURL; giữ biến để tương thích các lời gọi `${API_URL}/api/...`
 const { Title, Text } = Typography;
 
 export default function Favorites({ setPage, viewToyDetail }) {

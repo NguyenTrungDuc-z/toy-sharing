@@ -44,7 +44,7 @@ export default function GoogleLoginButton({ onLogin, showToast }) {
           client_id: GOOGLE_CLIENT_ID,
           callback: async (response) => {
             try {
-              const res = await axios.post('http://localhost:5000/api/auth/google', {
+              const res = await axios.post('/api/auth/google', {
                 credential: response.credential
               });
               if (res.data.token) localStorage.setItem('token', res.data.token);

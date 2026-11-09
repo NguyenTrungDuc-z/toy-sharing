@@ -21,7 +21,7 @@ export default function AdminDashboard({ setPage }) {
     (async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await axios.get('http://localhost:5000/api/auth/admin/stats', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get('/api/auth/admin/stats', { headers: { Authorization: `Bearer ${token}` } });
         if (res.data.success) setStats(res.data.data);
       } catch { /* bỏ qua */ } finally { setLoading(false); }
     })();

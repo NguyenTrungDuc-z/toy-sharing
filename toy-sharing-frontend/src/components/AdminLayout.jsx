@@ -2,7 +2,7 @@ import React from 'react';
 import { Layout, Menu, Typography } from 'antd';
 import {
   DashboardOutlined, TeamOutlined, AuditOutlined, FlagOutlined, SwapOutlined, WalletOutlined,
-  TagsOutlined,
+  TagsOutlined, AppstoreOutlined,
 } from '@ant-design/icons';
 
 const { Sider, Content } = Layout;
@@ -11,6 +11,7 @@ const items = [
   { key: 'admin-dashboard', icon: <DashboardOutlined />, label: 'Bảng điều khiển' },
   { key: 'role-management', icon: <TeamOutlined />, label: 'Phân quyền người dùng' },
   { key: 'toy-moderation', icon: <AuditOutlined />, label: 'Kiểm soát bài đăng' },
+  { key: 'admin-categories', icon: <AppstoreOutlined />, label: 'Quản lý danh mục' },
   { key: 'admin-reports', icon: <FlagOutlined />, label: 'Báo cáo vi phạm' },
   { key: 'admin-borrows', icon: <SwapOutlined />, label: 'Quản lý lượt mượn' },
   { key: 'admin-deposits', icon: <WalletOutlined />, label: 'Quản lý tiền cọc' },

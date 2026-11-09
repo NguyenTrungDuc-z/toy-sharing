@@ -15,7 +15,7 @@ export default function ToyReviewsModal({ isOpen, onClose, toy }) {
     if (!isOpen || !toy?._id) return;
     let active = true;
     setLoading(true);
-    axios.get(`http://localhost:5000/api/reviews/toy/${toy._id}`)
+    axios.get(`/api/reviews/toy/${toy._id}`)
       .then(res => { if (active && res.data.success) { setReviews(res.data.reviews || []); setStats(res.data.stats || { avg: 0, count: 0 }); } })
       .catch(() => { if (active) setReviews([]); })
       .finally(() => { if (active) setLoading(false); });

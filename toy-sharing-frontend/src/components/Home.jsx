@@ -46,13 +46,13 @@ function ToyCover({ toy }) {
   );
 }
 
-const categories = [
+// Dự phòng khi chưa tải được danh mục từ API
+const DEFAULT_CATEGORY_OPTIONS = [
   { value: 'all', label: 'Tất cả' },
-  { value: 'Xếp hình', label: 'Xếp hình & Lego' },
-  { value: 'Giáo dục', label: 'STEM & Trí tuệ' },
-  { value: 'Hành động', label: 'Xe & Vận động' },
-  { value: 'Công nghệ', label: 'Robot & Công nghệ' },
-  { value: 'Khác', label: 'Mỹ thuật & Sáng tạo' },
+  { value: 'Xếp hình', label: 'Xếp hình' },
+  { value: 'Giáo dục', label: 'Giáo dục' },
+  { value: 'Hành động', label: 'Hành động' },
+  { value: 'Công nghệ', label: 'Công nghệ' },
 ];
 
 const locationOptions = [
@@ -84,6 +84,16 @@ export default function Home({ user, setPage, viewToyDetail, initialCategory = '
   const [selectedToyForReviews, setSelectedToyForReviews] = useState(null);
   const [isSafetyModalOpen, setIsSafetyModalOpen] = useState(false);
   const [reportToy, setReportToy] = useState(null);
+  const [categoryOptions, setCategoryOptions] = useState(DEFAULT_CATEGORY_OPTIONS);
+
+  useEffect(() => {
+    axios.get('/api/categories')
+      .then(res => {
+        const cats = res.data?.categories || [];
+        if (cats.length) setCategoryOptions([{ value: 'all', label: 'Tất cả' }, ...cats.map(c => ({ value: c.name, label: c.name }))]);
+      })
+      .catch(() => {});
+  }, []);
 
   const showToast = (msg, type = 'success') => {
     if (type === 'error') message.error(msg);
@@ -102,7 +112,7 @@ export default function Home({ user, setPage, viewToyDetail, initialCategory = '
     if (filterAge !== 'all') params.ageRange = filterAge;
     if (filterCondition !== 'all') params.condition = filterCondition;
 
-    axios.get('http://localhost:5000/api/toys', { params })
+    axios.get('/api/toys', { params })
       .then(res => {
         if (!active) return;
         setToys(res.data.toys || []);
@@ -117,7 +127,7 @@ export default function Home({ user, setPage, viewToyDetail, initialCategory = '
   useEffect(() => {
     if (!user) return;
     const token = localStorage.getItem('token');
-    axios.get('http://localhost:5000/api/auth/me/favorites', { headers: { Authorization: `Bearer ${token}` } })
+    axios.get('/api/auth/me/favorites', { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setFavorites((res.data.favorites || []).map(t => t._id)))
       .catch(() => {});
   }, [user, refreshVersion]);
@@ -135,10 +145,10 @@ export default function Home({ user, setPage, viewToyDetail, initialCategory = '
     const isFav = favorites.includes(toy._id);
     try {
       if (isFav) {
-        await axios.delete(`http://localhost:5000/api/toys/${toy._id}/favorite`, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.delete(`/api/toys/${toy._id}/favorite`, { headers: { Authorization: `Bearer ${token}` } });
         setFavorites(cur => cur.filter(id => id !== toy._id));
       } else {
-        await axios.post(`http://localhost:5000/api/toys/${toy._id}/favorite`, {}, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.post(`/api/toys/${toy._id}/favorite`, {}, { headers: { Authorization: `Bearer ${token}` } });
         setFavorites(cur => [...cur, toy._id]);
       }
     } catch (err) {
@@ -224,7 +234,7 @@ export default function Home({ user, setPage, viewToyDetail, initialCategory = '
           size="large"
           value={filterCategory}
           onChange={v => { setCurrentPage(1); setFilterCategory(v); }}
-          options={categories}
+          options={categoryOptions}
         />
       </div>
 
@@ -386,7 +396,7 @@ function ReportToyModal({ toy, onClose, showToast }) {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:5000/api/toys/${toy._id}/report`,
+      await axios.post(`/api/toys/${toy._id}/report`,
         { reason, details }, { headers: { Authorization: `Bearer ${token}` } });
       showToast('Đã gửi báo cáo tới quản trị viên. Cảm ơn bạn!', 'success');
       onClose();

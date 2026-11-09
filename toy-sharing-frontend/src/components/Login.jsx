@@ -7,7 +7,7 @@ import GoogleLoginButton from './GoogleLoginButton';
 const { Title, Text, Link } = Typography;
 
 export default function Login({ setPage, setUser }) {
-  const { message } = App.useApp();
+  const { message, modal } = App.useApp();
   const [loading, setLoading] = React.useState(false);
 
   const showToast = (msg, type = 'success') => {
@@ -19,7 +19,7 @@ export default function Login({ setPage, setUser }) {
   const onFinish = async ({ email, password }) => {
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+      const res = await axios.post('/api/auth/login', { email, password });
       showToast(res.data.message || 'Đăng nhập thành công!', 'success');
       if (res.data.token) localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -28,7 +28,20 @@ export default function Login({ setPage, setUser }) {
       if (setUser) setUser(res.data.user);
       setPage(res.data.user?.role === 'admin' ? 'admin-dashboard' : 'home');
     } catch (err) {
-      showToast(err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng thử lại!', 'error');
+      const data = err.response?.data;
+      if (data?.needsVerification) {
+        modal.confirm({
+          title: 'Email chưa được xác thực',
+          content: 'Tài khoản của bạn cần xác thực email trước khi đăng nhập. Gửi lại liên kết xác thực tới email của bạn?',
+          okText: 'Gửi lại email', cancelText: 'Để sau',
+          onOk: async () => {
+            try { await axios.post('/api/auth/resend-verification', { email: data.email || email }); showToast('Đã gửi lại liên kết xác thực. Vui lòng kiểm tra email.', 'success'); }
+            catch { showToast('Không gửi lại được. Vui lòng thử lại sau.', 'error'); }
+          }
+        });
+      } else {
+        showToast(data?.message || 'Đăng nhập thất bại. Vui lòng thử lại!', 'error');
+      }
     } finally {
       setLoading(false);
     }
@@ -43,7 +56,7 @@ export default function Login({ setPage, setUser }) {
             <Text style={{ color: '#bfe3ee', fontWeight: 700, letterSpacing: 0.5 }}>ToyShare</Text>
             <Title level={2} style={{ color: '#fff', margin: 0 }}>Chia sẻ niềm vui, từng món đồ chơi một</Title>
             <Text style={{ color: '#d6eef4', fontSize: 15 }}>
-              Cộng đồng phụ huynh Việt cho mượn đồ chơi an toàn — khử khuẩn kỹ, ký quỹ qua VietQR, hoàn cọc đầy đủ.
+              Cộng đồng phụ huynh Việt cho mượn đồ chơi an toàn — ký quỹ qua VietQR, có bằng chứng bàn giao và hoàn cọc minh bạch.
             </Text>
           </div>
 

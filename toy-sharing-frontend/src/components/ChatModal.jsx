@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Modal, Input, Button, Spin, Empty, Typography, Flex } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
+import { API_BASE } from '../config';
 
 export default function ChatModal({ isOpen, onClose, borrowRequest, currentUserId, counterpartName }) {
   const [messages, setMessages] = useState([]);
@@ -18,12 +19,12 @@ export default function ChatModal({ isOpen, onClose, borrowRequest, currentUserI
     let active = true;
     setLoading(true);
     const token = localStorage.getItem('token');
-    axios.get(`http://localhost:5000/api/messages/${borrowRequest._id}`, { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(`/api/messages/${borrowRequest._id}`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => { if (active) { setMessages(res.data.messages || []); scrollToBottom(); } })
       .catch(() => {})
       .finally(() => { if (active) setLoading(false); });
     if (window.io) {
-      const socket = window.io('http://localhost:5000', { auth: { token } });
+      const socket = window.io(API_BASE, { auth: { token } });
       socket.on('connect', () => socket.emit('join', currentUserId));
       socket.on('message', (msg) => {
         if (msg.borrowRequestId === borrowRequest._id) { setMessages(prev => [...prev, msg]); scrollToBottom(); }
@@ -38,7 +39,7 @@ export default function ChatModal({ isOpen, onClose, borrowRequest, currentUserI
     setSending(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post(`http://localhost:5000/api/messages/${borrowRequest._id}`,
+      const res = await axios.post(`/api/messages/${borrowRequest._id}`,
         { content: input.trim() }, { headers: { Authorization: `Bearer ${token}` } });
       setMessages(prev => [...prev, res.data.message]);
       setInput(''); scrollToBottom();

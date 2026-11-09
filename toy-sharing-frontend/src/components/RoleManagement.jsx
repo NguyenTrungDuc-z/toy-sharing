@@ -16,7 +16,7 @@ export default function RoleManagement({ setPage }) {
 
   const fetchUserData = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/auth/admin/users', { params: { search, role: roleFilter }, headers: authHeaders() });
+      const res = await axios.get('/api/auth/admin/users', { params: { search, role: roleFilter }, headers: authHeaders() });
       if (res.data.success) { setUsers(res.data.users); setStats(res.data.stats); }
     } catch { /* bỏ qua */ } finally { setLoading(false); }
   };
@@ -29,7 +29,7 @@ export default function RoleManagement({ setPage }) {
 
   const setUserRole = async (userId, newRole) => {
     try {
-      await axios.put(`http://localhost:5000/api/auth/admin/users/${userId}`, { role: newRole }, { headers: authHeaders() });
+      await axios.put(`/api/auth/admin/users/${userId}`, { role: newRole }, { headers: authHeaders() });
       message.success(`Đã đổi quyền thành ${newRole === 'admin' ? 'Quản trị viên' : 'Người dùng'}!`);
       fetchUserData();
     } catch { message.error('Không thể cập nhật quyền hạn.'); }
@@ -44,7 +44,7 @@ export default function RoleManagement({ setPage }) {
       okText: 'Xác nhận', cancelText: 'Hủy', okButtonProps: { danger: newStatus === 'blocked' },
       onOk: async () => {
         try {
-          await axios.put(`http://localhost:5000/api/auth/admin/users/${u._id}`, { status: newStatus }, { headers: authHeaders() });
+          await axios.put(`/api/auth/admin/users/${u._id}`, { status: newStatus }, { headers: authHeaders() });
           message.success(`Đã ${actionText} tài khoản!`);
           fetchUserData();
         } catch { message.error('Không thể thay đổi trạng thái tài khoản.'); }

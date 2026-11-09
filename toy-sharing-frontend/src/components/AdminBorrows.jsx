@@ -28,7 +28,7 @@ export default function AdminBorrows({ setPage }) {
       try {
         const token = localStorage.getItem('token');
         const params = statusFilter === 'all' ? {} : { status: statusFilter };
-        const res = await axios.get('http://localhost:5000/api/admin/borrows', { params, headers: { Authorization: `Bearer ${token}` } });
+        const res = await axios.get('/api/admin/borrows', { params, headers: { Authorization: `Bearer ${token}` } });
         if (!active) return;
         setBorrows(res.data.borrows || []);
         setStats(res.data.stats || stats);

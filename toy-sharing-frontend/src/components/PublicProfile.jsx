@@ -15,7 +15,7 @@ export default function PublicProfile({ ownerId, setPage, viewToyDetail }) {
     if (!ownerId) return;
     let active = true;
     setLoading(true);
-    axios.get(`http://localhost:5000/api/users/${ownerId}`)
+    axios.get(`/api/users/${ownerId}`)
       .then(res => { if (active) { setData(res.data); setError(''); } })
       .catch(err => { if (active) setError(err.response?.data?.message || 'Không tải được hồ sơ.'); })
       .finally(() => { if (active) setLoading(false); });

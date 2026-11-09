@@ -35,14 +35,14 @@ export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDeta
     if (!toyId) return;
     let active = true;
     setLoading(true);
-    axios.get(`http://localhost:5000/api/toys/${toyId}`)
+    axios.get(`/api/toys/${toyId}`)
       .then(res => { if (active) { setToy(res.data); setError(''); } })
       .catch(err => { if (active) setError(err.response?.data?.message || 'Không tìm thấy đồ chơi.'); })
       .finally(() => { if (active) setLoading(false); });
-    axios.get(`http://localhost:5000/api/reviews/toy/${toyId}`)
+    axios.get(`/api/reviews/toy/${toyId}`)
       .then(res => { if (active && res.data.success) { setReviews(res.data.reviews || []); setReviewStats(res.data.stats || { avg: 0, count: 0 }); } })
       .catch(() => {});
-    axios.get(`http://localhost:5000/api/toys/${toyId}/related`)
+    axios.get(`/api/toys/${toyId}/related`)
       .then(res => { if (active && res.data.success) setRelatedToys(res.data.related || []); })
       .catch(() => {});
     return () => { active = false; };

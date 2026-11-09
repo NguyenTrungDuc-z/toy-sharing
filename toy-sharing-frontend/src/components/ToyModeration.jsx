@@ -25,7 +25,7 @@ export default function ToyModeration({ setPage }) {
   const fetchToys = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('http://localhost:5000/api/auth/admin/toys', {
+      const res = await axios.get('/api/auth/admin/toys', {
         params: { status: statusTab, category: categoryFilter }, headers: authHeaders() });
       if (res.data.success) { setToys(res.data.toys || []); if (res.data.stats) setStats(res.data.stats); }
       else setToys([]);
@@ -36,7 +36,7 @@ export default function ToyModeration({ setPage }) {
 
   const handleAction = async (id, action) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/auth/admin/toys/${id}/status`, { status: action }, { headers: authHeaders() });
+      const res = await axios.put(`/api/auth/admin/toys/${id}/status`, { status: action }, { headers: authHeaders() });
       if (res.data.success) { message.success(action === 'approved' ? 'Đã phê duyệt bài đăng!' : 'Đã từ chối bài đăng!'); fetchToys(); }
     } catch (err) { message.error(err.response?.data?.message || 'Không thể cập nhật trạng thái bài đăng!'); }
   };

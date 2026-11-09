@@ -5,7 +5,7 @@ import { MailOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-desi
 import { API_URL } from '../config';
 
 const { Title, Text, Link } = Typography;
-const BACKEND_URL = API_URL || 'http://localhost:5000/api';
+const BACKEND_URL = API_URL || '/api';
 
 export default function ForgotPassword({ setPage, initialToken = '', initialEmail = '' }) {
   const { message } = App.useApp();

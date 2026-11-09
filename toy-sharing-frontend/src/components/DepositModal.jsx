@@ -20,7 +20,7 @@ export default function DepositModal({ isOpen, onClose, borrowRequest, showToast
     if (!borrowRequest?._id) return;
     setLoading(true); setError('');
     try {
-      const res = await axios.get(`http://localhost:5000/api/deposits/${borrowRequest._id}/qr`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.get(`/api/deposits/${borrowRequest._id}/qr`, { headers: { Authorization: `Bearer ${token}` } });
       setQrData(res.data);
     } catch (err) {
       setError(err.response?.data?.message || 'Không tải được mã thanh toán.');
@@ -37,7 +37,7 @@ export default function DepositModal({ isOpen, onClose, borrowRequest, showToast
     if (!voucherCode.trim()) { showToast('Vui lòng nhập mã giảm cọc!', 'error'); return; }
     setApplying(true);
     try {
-      const res = await axios.post(`http://localhost:5000/api/vouchers/apply/${borrowRequest._id}`, { code: voucherCode.trim() }, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`/api/vouchers/apply/${borrowRequest._id}`, { code: voucherCode.trim() }, { headers: { Authorization: `Bearer ${token}` } });
       setVoucherInfo({ code: voucherCode.trim().toUpperCase(), discount: res.data.discount });
       showToast(res.data.message || 'Đã áp dụng mã giảm cọc!', 'success');
       await loadQR(); // tải lại QR với số cọc đã giảm
@@ -49,7 +49,7 @@ export default function DepositModal({ isOpen, onClose, borrowRequest, showToast
   const handleReportPaid = async () => {
     setReporting(true);
     try {
-      const res = await axios.post(`http://localhost:5000/api/deposits/${borrowRequest._id}/report-paid`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.post(`/api/deposits/${borrowRequest._id}/report-paid`, {}, { headers: { Authorization: `Bearer ${token}` } });
       showToast(res.data.message || 'Đã báo chuyển cọc!', 'success');
       onSuccess?.();
       onClose();

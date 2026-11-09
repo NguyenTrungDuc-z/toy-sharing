@@ -25,7 +25,7 @@ export default function BorrowActionModal({ isOpen, onClose, item, onSuccess, sh
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.patch(`http://localhost:5000/api/borrows/${item._id}/request-extension`,
+      const res = await axios.patch(`/api/borrows/${item._id}/request-extension`,
         { newDueDate: newDueDate.toISOString(), reason: note.trim() }, { headers: { Authorization: `Bearer ${token}` } });
       showToast?.('Đã gửi yêu cầu mượn thêm! Vui lòng chờ chủ đồ duyệt.', 'success');
       onSuccess?.(res.data.data); handleClose();
@@ -38,7 +38,7 @@ export default function BorrowActionModal({ isOpen, onClose, item, onSuccess, sh
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.patch(`http://localhost:5000/api/borrows/${item._id}/report-return`,
+      const res = await axios.patch(`/api/borrows/${item._id}/report-return`,
         { returnType, note: note.trim(), returnImages }, { headers: { Authorization: `Bearer ${token}` } });
       showToast?.(res.data.message || 'Đã gửi thông báo trả đồ thành công!', 'success');
       onSuccess?.(res.data.data); handleClose();

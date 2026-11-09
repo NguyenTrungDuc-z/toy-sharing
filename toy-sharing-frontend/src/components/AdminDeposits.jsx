@@ -41,7 +41,7 @@ export default function AdminDeposits({ setPage }) {
     setLoading(true);
     try {
       const params = statusFilter === 'all' ? {} : { status: statusFilter };
-      const res = await axios.get('http://localhost:5000/api/deposits/admin/all', { params, headers: authHeaders() });
+      const res = await axios.get('/api/deposits/admin/all', { params, headers: authHeaders() });
       setDeposits(res.data.deposits || []);
       setStats(res.data.stats || stats);
       setAdminBank(res.data.adminBank || { configured: false });
@@ -55,7 +55,7 @@ export default function AdminDeposits({ setPage }) {
   const doAction = async (id, action, body) => {
     setActionId(id);
     try {
-      const res = await axios.post(`http://localhost:5000/api/deposits/admin/${id}/${action}`, body || {}, { headers: authHeaders() });
+      const res = await axios.post(`/api/deposits/admin/${id}/${action}`, body || {}, { headers: authHeaders() });
       message.success(res.data.message || 'Thành công.');
       await fetchDeposits();
     } catch (err) {

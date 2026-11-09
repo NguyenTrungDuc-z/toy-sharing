@@ -21,7 +21,7 @@ export default function ReviewModal({ isOpen, onClose, toy, borrowRequestId, onS
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post('http://localhost:5000/api/reviews',
+      const res = await axios.post('/api/reviews',
         { toyId: toy._id, borrowRequestId: borrowRequestId || undefined, rating, comment: comment.trim() },
         { headers: { Authorization: `Bearer ${token}` } });
       showToast?.('Cảm ơn bạn đã gửi đánh giá!', 'success');

@@ -14,7 +14,7 @@ export default function HandoverModal({ isOpen, onClose, item, showToast, onSucc
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:5000/api/borrows/${item._id}/confirm-deposit`,
+      await axios.patch(`/api/borrows/${item._id}/confirm-deposit`,
         { handoverImages: images }, { headers: { Authorization: `Bearer ${token}` } });
       showToast('Đã xác nhận giao đồ!', 'success');
       setImages([]); onSuccess(); onClose();

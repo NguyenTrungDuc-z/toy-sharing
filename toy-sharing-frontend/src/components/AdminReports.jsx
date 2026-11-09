@@ -4,7 +4,7 @@ import { App, Card, Select, Input, Button, Tag, Typography, Empty, Spin, Flex } 
 import AdminLayout from './AdminLayout';
 
 const { Text, Title, Paragraph } = Typography;
-const API_URL = 'http://localhost:5000/api/admin/reports';
+const API_URL = '/api/admin/reports';
 const statusLabels = { open: 'Mới tiếp nhận', processing: 'Đang xử lý', closed: 'Đã đóng', dismissed: 'Không vi phạm' };
 const statusColor = { open: 'gold', processing: 'blue', closed: 'green', dismissed: 'default' };
 

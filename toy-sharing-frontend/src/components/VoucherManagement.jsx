@@ -5,7 +5,7 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import AdminLayout from './AdminLayout';
 
-const API = 'http://localhost:5000/api/vouchers';
+const API = '/api/vouchers';
 
 export default function VoucherManagement({ setPage }) {
   const { message, modal } = App.useApp();

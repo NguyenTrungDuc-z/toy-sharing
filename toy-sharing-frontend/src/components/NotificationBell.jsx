@@ -6,6 +6,7 @@ import {
   ClockCircleOutlined, LikeOutlined, DislikeOutlined, SyncOutlined, FieldTimeOutlined,
   SafetyOutlined, HeartOutlined, MessageOutlined, StarOutlined,
 } from '@ant-design/icons';
+import { API_BASE } from '../config';
 
 const typeIcon = {
   borrow_request: <InboxOutlined style={{ color: '#0b6e8f' }} />,
@@ -44,7 +45,7 @@ export default function NotificationBell({ setPage }) {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      const res = await axios.get('http://localhost:5000/api/notifications', {
+      const res = await axios.get('/api/notifications', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data.notifications || []);
@@ -59,7 +60,7 @@ export default function NotificationBell({ setPage }) {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     if (window.io && userId) {
-      socket = window.io('http://localhost:5000', { auth: { token } });
+      socket = window.io(API_BASE, { auth: { token } });
       socket.on('connect', () => socket.emit('join', userId));
       socket.on('notification', (notif) => {
         setNotifications(prev => [notif, ...prev].slice(0, 50));
@@ -72,7 +73,7 @@ export default function NotificationBell({ setPage }) {
   const markAllRead = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch('http://localhost:5000/api/notifications/read-all', {}, {
+      await axios.patch('/api/notifications/read-all', {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
@@ -84,7 +85,7 @@ export default function NotificationBell({ setPage }) {
     try {
       if (!notif.isRead) {
         const token = localStorage.getItem('token');
-        await axios.patch(`http://localhost:5000/api/notifications/${notif._id}/read`, {}, {
+        await axios.patch(`/api/notifications/${notif._id}/read`, {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));

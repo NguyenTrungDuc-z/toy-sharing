@@ -13,10 +13,13 @@ export default function Register({ setPage }) {
     if (!v.agree) { message.error('Vui lòng đồng ý với Hướng dẫn an toàn & Điều khoản dịch vụ!'); return; }
     setLoading(true);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
+      const res = await axios.post('/api/auth/register', {
         name: v.name, email: v.email, password: v.password, phone: v.phone,
       });
-      message.success(res.data.message || 'Đăng ký thành công!');
+      message.success(res.data.message || 'Đăng ký thành công!', 6);
+      if (res.data.requiresVerification) {
+        message.info('Hãy mở email và bấm liên kết xác thực trước khi đăng nhập.', 8);
+      }
       setPage('login');
     } catch (err) {
       message.error(err.response?.data?.message || 'Đăng ký thất bại');

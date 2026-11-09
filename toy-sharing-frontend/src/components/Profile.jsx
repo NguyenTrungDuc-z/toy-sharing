@@ -6,7 +6,7 @@ import {
   ClockCircleOutlined, StarOutlined,
 } from '@ant-design/icons';
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = '/api/auth';
 const { Title, Text } = Typography;
 
 export default function Profile({ user, onUserUpdated }) {
@@ -31,7 +31,7 @@ export default function Profile({ user, onUserUpdated }) {
       .catch(err => message.error(err.response?.data?.message || 'Không thể tải thông tin tài khoản.'))
       .finally(() => setLoading(false));
 
-    axios.get('http://localhost:5000/api/users/me/stats', { headers: authHeaders() })
+    axios.get('/api/users/me/stats', { headers: authHeaders() })
       .then(res => setStats(res.data)).catch(() => {});
   }, []);
 

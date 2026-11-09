@@ -55,9 +55,9 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
     try {
       if (!userId) { setIncomingRequests([]); setMyBorrows([]); return; }
       const [a, b, c] = await Promise.all([
-        axios.get('http://localhost:5000/api/borrows/incoming-requests', authHeaders()),
-        axios.get('http://localhost:5000/api/borrows/my-borrows', authHeaders()),
-        axios.get('http://localhost:5000/api/borrows/user-history', authHeaders()),
+        axios.get('/api/borrows/incoming-requests', authHeaders()),
+        axios.get('/api/borrows/my-borrows', authHeaders()),
+        axios.get('/api/borrows/user-history', authHeaders()),
       ]);
       setIncomingRequests(a.data || []); setMyBorrows(b.data || []); setUserHistory(c.data || []);
     } catch { setIncomingRequests([]); setMyBorrows([]); setUserHistory([]); } finally { setLoading(false); }
@@ -66,15 +66,15 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
   useEffect(() => { if (initialTab) setActiveTab(initialTab); }, [initialTab]);
   useEffect(() => {
     fetchData();
-    axios.get('http://localhost:5000/api/reviews/my-reviewed-requests', authHeaders())
+    axios.get('/api/reviews/my-reviewed-requests', authHeaders())
       .then(res => setReviewedRequestIds(res.data.reviewedRequestIds || [])).catch(() => {});
   }, []);
 
   const refreshCurrentTab = async () => {
     if (!userId) return;
-    if (activeTab === 'incoming') setIncomingRequests((await axios.get('http://localhost:5000/api/borrows/incoming-requests', authHeaders())).data || []);
-    else if (activeTab === 'borrowing') setMyBorrows((await axios.get('http://localhost:5000/api/borrows/my-borrows', authHeaders())).data || []);
-    else setUserHistory((await axios.get('http://localhost:5000/api/borrows/user-history', authHeaders())).data || []);
+    if (activeTab === 'incoming') setIncomingRequests((await axios.get('/api/borrows/incoming-requests', authHeaders())).data || []);
+    else if (activeTab === 'borrowing') setMyBorrows((await axios.get('/api/borrows/my-borrows', authHeaders())).data || []);
+    else setUserHistory((await axios.get('/api/borrows/user-history', authHeaders())).data || []);
   };
 
   const act = async (fn, okMsg, okType = 'success') => {
@@ -83,12 +83,12 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
     catch (err) { showToast(err.response?.data?.message || err.message, 'error'); }
     finally { setActionLoading(false); }
   };
-  const approve = (id) => act(() => axios.put(`http://localhost:5000/api/borrows/${id}/approve`, {}, authHeaders()), 'Đã duyệt yêu cầu mượn!');
-  const reject = (id) => act(() => axios.put(`http://localhost:5000/api/borrows/${id}/reject`, {}, authHeaders()), 'Đã từ chối yêu cầu mượn!');
+  const approve = (id) => act(() => axios.put(`/api/borrows/${id}/approve`, {}, authHeaders()), 'Đã duyệt yêu cầu mượn!');
+  const reject = (id) => act(() => axios.put(`/api/borrows/${id}/reject`, {}, authHeaders()), 'Đã từ chối yêu cầu mượn!');
   const cancel = (id) => modal.confirm({ title: 'Huỷ yêu cầu mượn', content: 'Bạn có chắc muốn huỷ yêu cầu mượn này?', okText: 'Huỷ yêu cầu', okButtonProps: { danger: true }, cancelText: 'Không',
-    onOk: () => act(() => axios.patch(`http://localhost:5000/api/borrows/${id}/cancel`, {}, authHeaders()), 'Đã huỷ yêu cầu mượn!') });
-  const approveExt = (id) => act(() => axios.patch(`http://localhost:5000/api/borrows/${id}/approve-extension`, {}, authHeaders()), 'Đã đồng ý gia hạn!');
-  const rejectExt = (id) => act(() => axios.patch(`http://localhost:5000/api/borrows/${id}/reject-extension`, {}, authHeaders()), 'Đã từ chối yêu cầu gia hạn.', 'info');
+    onOk: () => act(() => axios.patch(`/api/borrows/${id}/cancel`, {}, authHeaders()), 'Đã huỷ yêu cầu mượn!') });
+  const approveExt = (id) => act(() => axios.patch(`/api/borrows/${id}/approve-extension`, {}, authHeaders()), 'Đã đồng ý gia hạn!');
+  const rejectExt = (id) => act(() => axios.patch(`/api/borrows/${id}/reject-extension`, {}, authHeaders()), 'Đã từ chối yêu cầu gia hạn.', 'info');
 
   const statusTag = (item) => {
     const s = item.status;

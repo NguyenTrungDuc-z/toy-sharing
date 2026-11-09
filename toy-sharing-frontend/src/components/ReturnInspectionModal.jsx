@@ -31,7 +31,7 @@ export default function ReturnInspectionModal({ isOpen, onClose, item, showToast
       const body = { condition };
       if (condition === 'damaged') { body.amount = Number(amount); body.note = note; body.images = images; }
       if (condition === 'lost') { body.note = note; body.images = images; }
-      const res = await axios.patch(`http://localhost:5000/api/borrows/${item._id}/confirm-return`, body, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.patch(`/api/borrows/${item._id}/confirm-return`, body, { headers: { Authorization: `Bearer ${token}` } });
       showToast(res.data.message || 'Thành công!', 'success');
       reset(); onSuccess(); onClose();
     } catch (err) {

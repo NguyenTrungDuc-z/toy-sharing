@@ -20,7 +20,7 @@ export default function ClaimResponseModal({ isOpen, onClose, item, showToast, o
       const token = localStorage.getItem('token');
       const body = { accept };
       if (!accept) { body.note = note; body.images = images; }
-      const res = await axios.patch(`http://localhost:5000/api/borrows/${item._id}/respond-claim`, body, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await axios.patch(`/api/borrows/${item._id}/respond-claim`, body, { headers: { Authorization: `Bearer ${token}` } });
       showToast(res.data.message || 'Đã gửi phản hồi!', 'success');
       reset(); onSuccess(); onClose();
     } catch (err) {

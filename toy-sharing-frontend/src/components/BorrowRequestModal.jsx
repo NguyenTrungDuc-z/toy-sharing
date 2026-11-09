@@ -26,7 +26,7 @@ export default function BorrowRequestModal({ isOpen, onClose, toy, user, onBorro
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.post('http://localhost:5000/api/borrows', {
+      const res = await axios.post('/api/borrows', {
         toyId: toy._id,
         dueDate: to.toISOString(),
         note: v.note || '',

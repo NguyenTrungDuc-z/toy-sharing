@@ -26,7 +26,7 @@ export default function MyToys() {
 
   const fetchToys = () => {
     setLoading(true);
-    axios.get('http://localhost:5000/api/toys/my-toys', { headers: authHeaders() })
+    axios.get('/api/toys/my-toys', { headers: authHeaders() })
       .then(res => setMyToys(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -34,7 +34,7 @@ export default function MyToys() {
 
   useEffect(() => {
     fetchToys();
-    axios.get('http://localhost:5000/api/auth/me', { headers: authHeaders() })
+    axios.get('/api/auth/me', { headers: authHeaders() })
       .then(res => { if (res.data.user?.rating) setUserRating(res.data.user.rating); })
       .catch(() => {});
   }, []);
@@ -50,7 +50,7 @@ export default function MyToys() {
       okText: 'Gỡ bỏ', okButtonProps: { danger: true }, cancelText: 'Hủy',
       onOk: async () => {
         try {
-          await axios.delete(`http://localhost:5000/api/toys/${toy._id}`, { headers: authHeaders() });
+          await axios.delete(`/api/toys/${toy._id}`, { headers: authHeaders() });
           message.success('Đã gỡ đồ chơi thành công!');
           fetchToys();
         } catch (err) {
@@ -63,10 +63,10 @@ export default function MyToys() {
   const handleFormSubmit = async (formData) => {
     try {
       if (selectedToy) {
-        await axios.put(`http://localhost:5000/api/toys/${selectedToy._id}`, formData, { headers: authHeaders() });
+        await axios.put(`/api/toys/${selectedToy._id}`, formData, { headers: authHeaders() });
         message.success('Cập nhật đồ chơi thành công!');
       } else {
-        await axios.post('http://localhost:5000/api/toys', formData, { headers: authHeaders() });
+        await axios.post('/api/toys', formData, { headers: authHeaders() });
         message.success('Đăng đồ chơi mới thành công! Chờ admin duyệt.');
       }
       setIsModalOpen(false);

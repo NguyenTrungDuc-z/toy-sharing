@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Modal, Form, Input, InputNumber, Select, Radio, Upload, Alert, App } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { VIETNAM_REGIONS } from '../constants/vietnamLocations';
@@ -15,12 +16,19 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
   const { message } = App.useApp();
   const [form] = Form.useForm();
   const [images, setImages] = useState([]); // base64[]
+  const [categoryNames, setCategoryNames] = useState(DEFAULT_CATEGORIES);
   const category = Form.useWatch('category', form);
+
+  useEffect(() => {
+    axios.get('/api/categories')
+      .then(res => { const cats = res.data?.categories || []; if (cats.length) setCategoryNames(cats.map(c => c.name)); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
     if (editingToy) {
-      const isCustom = editingToy.category && !DEFAULT_CATEGORIES.includes(editingToy.category);
+      const isCustom = editingToy.category && !categoryNames.includes(editingToy.category);
       form.setFieldsValue({
         name: editingToy.name || '',
         category: isCustom ? 'Khác' : (editingToy.category || 'Giáo dục'),
@@ -90,7 +98,7 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
         </Form.Item>
 
         <Form.Item name="category" label="Danh mục" rules={[{ required: true }]}>
-          <Select options={[...DEFAULT_CATEGORIES.map(c => ({ value: c, label: c })), { value: 'Khác', label: 'Khác' }]} />
+          <Select options={[...categoryNames.map(c => ({ value: c, label: c })), { value: 'Khác', label: 'Khác' }]} />
         </Form.Item>
         {category === 'Khác' && (
           <Form.Item name="customCategory" label="Tên danh mục khác" rules={[{ required: true, message: 'Nhập tên danh mục' }]}>

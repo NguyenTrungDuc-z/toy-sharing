@@ -183,7 +183,7 @@ export default function Home({ user, setPage, viewToyDetail, initialCategory = '
         <Space size={8} wrap>
           <SafetyCertificateOutlined style={{ color: 'var(--color-primary)', fontSize: 18 }} />
           <span style={{ fontSize: 13, color: 'var(--color-muted-foreground)' }}>
-            Đồ chơi khử khuẩn, <b style={{ color: 'var(--color-foreground)' }}>ký quỹ an toàn qua VietQR</b> — hoàn cọc đầy đủ khi trả nguyên vẹn.
+Có ảnh bàn giao làm bằng chứng, <b style={{ color: 'var(--color-foreground)' }}>ký quỹ an toàn qua VietQR</b> — hoàn cọc đầy đủ khi trả nguyên vẹn.
           </span>
         </Space>
         <Button type="link" size="small" onClick={() => setIsSafetyModalOpen(true)} style={{ padding: 0 }}>

@@ -21,6 +21,31 @@ const conditionTag = {
   used: { text: 'Đã dùng tốt', color: 'default' },
 };
 
+// Placeholder đẹp theo danh mục khi đồ chơi thiếu ảnh / ảnh hỏng
+const categoryVisual = {
+  'Xếp hình': { icon: '🧩', bg: 'linear-gradient(135deg,#e0f2f7 0%,#c6e7f0 100%)' },
+  'Giáo dục': { icon: '🔬', bg: 'linear-gradient(135deg,#e8f0fe 0%,#d2e3fc 100%)' },
+  'Hành động': { icon: '🏎️', bg: 'linear-gradient(135deg,#fff1e6 0%,#ffe0c2 100%)' },
+  'Công nghệ': { icon: '🤖', bg: 'linear-gradient(135deg,#eef2f6 0%,#dbe3ea 100%)' },
+  _default: { icon: '🧸', bg: 'linear-gradient(135deg,#fdf0e3 0%,#fbe3c9 100%)' },
+};
+
+function ToyCover({ toy }) {
+  const [broken, setBroken] = React.useState(false);
+  const src = toy.images?.[0];
+  const vis = categoryVisual[toy.category] || categoryVisual._default;
+  if (src && !broken) {
+    return <img src={src} alt={toy.name} loading="lazy" onError={() => setBroken(true)}
+      style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+  }
+  return (
+    <div style={{ width: '100%', height: '100%', background: vis.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+      <span style={{ fontSize: 56, lineHeight: 1 }}>{vis.icon}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(22,38,46,0.45)' }}>{toy.category || 'Đồ chơi'}</span>
+    </div>
+  );
+}
+
 const categories = [
   { value: 'all', label: 'Tất cả' },
   { value: 'Xếp hình', label: 'Xếp hình & Lego' },
@@ -257,9 +282,7 @@ export default function Home({ user, setPage, viewToyDetail }) {
                   onClick={() => viewToyDetail?.(toy._id)}
                   cover={
                     <div style={{ position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden', background: '#f1f4f6' }}>
-                      {toy.images?.[0]
-                        ? <img src={toy.images[0]} alt={toy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <Flex align="center" justify="center" style={{ height: '100%', fontSize: 52 }}>🧸</Flex>}
+                      <ToyCover toy={toy} />
                       <Tooltip title={isFav ? 'Bỏ yêu thích' : 'Lưu yêu thích'}>
                         <Button
                           shape="circle"

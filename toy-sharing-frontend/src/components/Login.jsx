@@ -5,6 +5,7 @@ import axios from 'axios';
 export default function Login({ setPage, setUser }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -144,30 +145,30 @@ export default function Login({ setPage, setUser }) {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <label style={{ fontSize: '13px', fontWeight: '600', color: '#4a3f35', flex: 1 }}>Password</label>
-               <span 
-                 onClick={() => showToast('Chức năng Quên mật khẩu đang được phát triển!', 'info')} 
+               <span
+                 onClick={() => setPage('forgot-password')}
                  style={{ fontSize: '12px', color: '#4f46e5', fontWeight: '600', cursor: 'pointer' }}
                >
                  Forgot password?
                </span>
             </div>
             <div style={{ position: 'relative' }}>
-              <input 
-                type="password" 
-                placeholder="••••••••" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)} 
-                required 
-                style={{ 
-                  width: '100%', 
-                  padding: '14px 16px', 
-                  borderRadius: '12px', 
-                  border: '1px solid #e2d8cf', 
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  border: '1px solid #e2d8cf',
                   backgroundColor: '#fff',
                   fontSize: '14px'
-                }} 
+                }}
               />
-              <span style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#a19286' }}>👁️</span>
+              <span onClick={() => setShowPassword(!showPassword)} style={{ position: 'absolute', right: '15px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#a19286', userSelect: 'none' }}>{showPassword ? '🙈' : '👁️'}</span>
             </div>
           </div>
 
@@ -215,22 +216,24 @@ export default function Login({ setPage, setUser }) {
 
        
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-           <button 
-             onClick={() => showToast('Đăng nhập Google', 'info')}
-             style={{ 
-               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', 
-               border: '1px solid #e2d8cf', borderRadius: '12px', backgroundColor: '#fff', 
-               fontWeight: '600', fontSize: '13px', color: '#4a3f35', cursor: 'pointer'
+           <button
+             onClick={() => showToast('Đăng nhập Google sắp ra mắt! Cần cấu hình OAuth.', 'info')}
+             title="Sắp ra mắt"
+             style={{
+               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px',
+               border: '1px solid #e2d8cf', borderRadius: '12px', backgroundColor: '#fff',
+               fontWeight: '600', fontSize: '13px', color: '#a19286', cursor: 'not-allowed', opacity: 0.7
              }}
            >
              <span>🌐</span> Google
            </button>
-           <button 
-             onClick={() => showToast('Đăng nhập Facebook', 'info')}
-             style={{ 
-               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', 
-               border: 'none', borderRadius: '12px', backgroundColor: '#1877f2', 
-               fontWeight: '600', fontSize: '13px', color: '#fff', cursor: 'pointer'
+           <button
+             onClick={() => showToast('Đăng nhập Facebook sắp ra mắt! Cần cấu hình OAuth.', 'info')}
+             title="Sắp ra mắt"
+             style={{
+               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px',
+               border: 'none', borderRadius: '12px', backgroundColor: '#1877f2',
+               fontWeight: '600', fontSize: '13px', color: '#fff', cursor: 'not-allowed', opacity: 0.7
              }}
            >
              <span>🔹</span> Facebook

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 
 const API_URL = 'http://localhost:5000/api/auth';
@@ -10,6 +10,8 @@ export default function Profile({ user, onUserUpdated }) {
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
   const [notice, setNotice] = useState(null);
+  const [stats, setStats] = useState(null);
+  const avatarFileRef = useRef(null);
 
   const getAuthHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -31,6 +33,10 @@ export default function Profile({ user, onUserUpdated }) {
     };
 
     loadProfile();
+
+    axios.get('http://localhost:5000/api/users/me/stats', { headers: getAuthHeaders() })
+      .then(res => setStats(res.data))
+      .catch(() => {});
   }, []);
 
   const handleProfileChange = (event) => {
@@ -112,6 +118,24 @@ export default function Profile({ user, onUserUpdated }) {
         <p style={{ color: 'var(--text-muted)', marginTop: '6px' }}>Quản lý hồ sơ và bảo mật tài khoản ToyShare.</p>
       </header>
 
+      {stats && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '14px', marginBottom: '28px' }}>
+          {[
+            { label: 'Đồ chơi đăng', value: stats.totalToys, icon: '🧸' },
+            { label: 'Đã cho mượn', value: stats.totalLent, icon: '🤝' },
+            { label: 'Đã đi mượn', value: stats.totalBorrowed, icon: '📦' },
+            { label: 'Trả đúng hạn', value: `${stats.onTimeRate}%`, icon: '⏱️' },
+            { label: 'Đánh giá nhận', value: stats.reviewsReceived, icon: '⭐' },
+          ].map(s => (
+            <div key={s.label} style={{ background: '#fff', border: '1px solid #f1eae4', borderRadius: '16px', padding: '16px', textAlign: 'center' }}>
+              <div style={{ fontSize: '22px', marginBottom: '4px' }}>{s.icon}</div>
+              <div style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-main)' }}>{s.value}</div>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {notice && (
         <div role="status" style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '10px', color: notice.type === 'success' ? '#166534' : '#b91c1c', background: notice.type === 'success' ? '#dcfce7' : '#fee2e2' }}>
           {notice.message}
@@ -136,13 +160,28 @@ export default function Profile({ user, onUserUpdated }) {
             Địa chỉ
             <input name="address" value={profile.address || ''} onChange={handleProfileChange} style={inputStyle} />
           </label>
-          <label style={fieldStyle}>
-            Ảnh đại diện (URL)
-            <input name="avatar" type="url" value={profile.avatar || ''} onChange={handleProfileChange} style={inputStyle} placeholder="https://example.com/avatar.jpg" />
-          </label>
-          {profile.avatar && (
-            <img src={profile.avatar} alt="Ảnh đại diện hiện tại" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover' }} />
-          )}
+          <div style={fieldStyle}>
+            Ảnh đại diện
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              {profile.avatar ? (
+                <img src={profile.avatar} alt="Avatar" style={{ width: '72px', height: '72px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f1eae4' }} />
+              ) : (
+                <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: '#f8f6f3', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', border: '2px solid #f1eae4' }}>👤</div>
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                <input ref={avatarFileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  if (file.size > 2 * 1024 * 1024) { setNotice({ type: 'error', message: 'Ảnh tối đa 2MB' }); return; }
+                  const reader = new FileReader();
+                  reader.onloadend = () => setProfile(p => ({ ...p, avatar: reader.result }));
+                  reader.readAsDataURL(file);
+                }} />
+                <button type="button" onClick={() => avatarFileRef.current?.click()} style={{ ...buttonStyle, background: '#6b5a4e', padding: '8px 14px', fontSize: '13px' }}>Tải ảnh lên</button>
+                <input name="avatar" type="url" value={profile.avatar?.startsWith('data:') ? '' : (profile.avatar || '')} onChange={handleProfileChange} style={inputStyle} placeholder="Hoặc nhập URL ảnh" />
+              </div>
+            </div>
+          </div>
           <div>
             <button type="submit" style={buttonStyle} disabled={savingProfile}>
               {savingProfile ? 'Đang lưu...' : 'Lưu hồ sơ'}

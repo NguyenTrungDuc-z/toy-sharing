@@ -3,12 +3,13 @@ import axios from 'axios';
 import BorrowRequestModal from './BorrowRequestModal';
 import ToyReviewsModal from './ToyReviewsModal';
 
-export default function Home({ user, setPage }) {
+export default function Home({ user, setPage, viewToyDetail }) {
   const [toys, setToys] = useState([]);
   const [filterAge, setFilterAge] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all'); 
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterLocation, setFilterLocation] = useState('');
   const [sort, setSort] = useState('newest');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
@@ -27,6 +28,7 @@ export default function Home({ user, setPage }) {
     let active = true;
     const params = { page: currentPage, limit: 12, sort };
     if (searchTerm.trim()) params.search = searchTerm.trim();
+    if (filterLocation.trim()) params.location = filterLocation.trim();
     if (filterCategory !== 'all' && filterCategory !== 'Khác') params.category = filterCategory;
 
     axios.get('http://localhost:5000/api/toys', { params })
@@ -44,7 +46,7 @@ export default function Home({ user, setPage }) {
       });
 
     return () => { active = false; };
-  }, [currentPage, filterCategory, refreshVersion, searchTerm, sort]);
+  }, [currentPage, filterCategory, filterLocation, refreshVersion, searchTerm, sort]);
 
   useEffect(() => {
     if (!user) return;
@@ -331,6 +333,11 @@ export default function Home({ user, setPage }) {
       <div style={{ margin: '50px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ fontSize: '24px', borderLeft: '6px solid var(--primary-color)', paddingLeft: '15px' }}>Đồ chơi mới cập nhật</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '14px' }}>
+            📍 Khu vực
+            <input value={filterLocation} onChange={event => { setCurrentPage(1); setFilterLocation(event.target.value); }} placeholder="Nhập khu vực..." style={{ padding: '10px 12px', border: '1px solid #ebdcd0', borderRadius: '10px', background: '#fff', color: 'var(--text-main)', width: '160px' }} />
+          </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '14px' }}>
             Sắp xếp
             <select value={sort} onChange={event => { setCurrentPage(1); setSort(event.target.value); }} style={{ padding: '10px 12px', border: '1px solid #ebdcd0', borderRadius: '10px', background: '#fff', color: 'var(--text-main)' }}>
@@ -341,6 +348,7 @@ export default function Home({ user, setPage }) {
               <option value="deposit-desc">Tiền cọc cao nhất</option>
             </select>
           </label>
+          </div>
         </div>
 
         {filteredToys.length === 0 ? (
@@ -352,7 +360,7 @@ export default function Home({ user, setPage }) {
             {filteredToys.map((toy) => (
               <div key={toy._id} className="toy-card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ width: '100%', height: '180px', backgroundColor: '#fbf7f4', borderRadius: '18px', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', overflow: 'hidden' }}>
+                  <div onClick={() => viewToyDetail && viewToyDetail(toy._id)} title="Xem chi tiết" style={{ width: '100%', height: '180px', backgroundColor: '#fbf7f4', borderRadius: '18px', marginBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px', overflow: 'hidden', cursor: 'pointer' }}>
                     {toy.images && toy.images.length > 0 ? (
                       <img
                         src={toy.images[0]}
@@ -373,7 +381,7 @@ export default function Home({ user, setPage }) {
                     </span>
 
                   </div>
-                  <h3 style={{ marginTop: '12px', marginBottom: '4px', fontSize: '18px', fontWeight: '600' }}>{toy.name}</h3>
+                  <h3 onClick={() => viewToyDetail && viewToyDetail(toy._id)} style={{ marginTop: '12px', marginBottom: '4px', fontSize: '18px', fontWeight: '600', cursor: 'pointer' }}>{toy.name}</h3>
                   <div 
                     onClick={() => setSelectedToyForReviews(toy)}
                     title="Nhấn để xem nhận xét từ phụ huynh"

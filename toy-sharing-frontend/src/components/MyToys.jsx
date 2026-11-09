@@ -5,8 +5,8 @@ import ToyFormModal from './ToyFormModal'; // Đảm bảo import đúng file mo
 export default function MyToys() {
   const [myToys, setMyToys] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  
+  const [userRating, setUserRating] = useState({ avg: 0, count: 0 });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedToy, setSelectedToy] = useState(null); // null = Đăng mới | có dữ liệu = Chỉnh sửa
   const [toast, setToast] = useState(null);
@@ -38,6 +38,14 @@ export default function MyToys() {
 
   useEffect(() => {
     fetchToys();
+    const token = localStorage.getItem('token');
+    if (token) {
+      axios.get('http://localhost:5000/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        if (res.data.user?.rating) setUserRating(res.data.user.rating);
+      }).catch(() => {});
+    }
   }, []);
 
   
@@ -165,8 +173,8 @@ export default function MyToys() {
         <div style={{ background: 'white', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid #f1eae4', display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ width: '50px', height: '50px', borderRadius: '50%', background: '#e6f6ee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>⭐</div>
           <div>
-            <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Điểm uy tín</div>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#15803d' }}>4.9 / 5.0</div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Điểm uy tín ({userRating.count} đánh giá)</div>
+            <div style={{ fontSize: '24px', fontWeight: '700', color: '#15803d' }}>{userRating.count > 0 ? userRating.avg.toFixed(1) : '—'} / 5.0</div>
           </div>
         </div>
       </div>

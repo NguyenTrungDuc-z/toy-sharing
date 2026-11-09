@@ -8,8 +8,9 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
     ageRange: 'Chọn độ tuổi',
     condition: 'Mới (New)',
     description: '',
-    imageUrl: '',
-    depositRequired: ''
+    images: [],
+    depositRequired: '',
+    location: ''
   });
 
   
@@ -20,8 +21,9 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
     if (!cond) return 'Mới (New)';
     const c = cond.toLowerCase();
     if (c === 'new') return 'Mới (New)';
+    if (c === 'like_new') return 'Như mới (Like New)';
     if (c === 'used') return 'Đã dùng (Used)';
-    return cond; 
+    return cond;
   };
 
   useEffect(() => {
@@ -37,36 +39,37 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
         ageRange: editingToy.ageRange || 'Chọn độ tuổi',
         condition: normalizeConditionToFrontend(editingToy.condition),
         description: editingToy.description || '',
-       
-        imageUrl: editingToy.imageUrl || (Array.isArray(editingToy.images) && editingToy.images.length > 0 ? editingToy.images[0] : ''),
-        depositRequired: editingToy.depositRequired || ''
+        images: Array.isArray(editingToy.images) ? editingToy.images : [],
+        depositRequired: editingToy.depositRequired || '',
+        location: editingToy.location || ''
       });
     } else {
-      setFormData({ name: '', category: 'Giáo dục', customCategory: '', ageRange: 'Chọn độ tuổi', condition: 'Mới (New)', description: '', imageUrl: '', depositRequired: '' });
+      setFormData({ name: '', category: 'Giáo dục', customCategory: '', ageRange: 'Chọn độ tuổi', condition: 'Mới (New)', description: '', images: [], depositRequired: '', location: '' });
     }
   }, [editingToy, isOpen]);
 
   
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      
+    const files = Array.from(e.target.files);
+    const remaining = 5 - formData.images.length;
+    const toProcess = files.slice(0, remaining);
+    toProcess.forEach(file => {
+      if (file.size > 3 * 1024 * 1024) return;
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData({
-          ...formData,
-          imageUrl: reader.result 
-        });
+        setFormData(prev => ({ ...prev, images: [...prev.images, reader.result].slice(0, 5) }));
       };
       reader.readAsDataURL(file);
-    }
+    });
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const removeImage = (index) => {
+    setFormData(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+  };
 
   const triggerFileSelect = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
+    if (fileInputRef.current) fileInputRef.current.click();
   };
 
   if (!isOpen) return null;
@@ -102,42 +105,35 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
             <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#a19286', marginBottom: '12px' }}>📷 Hình ảnh đồ chơi</label>
             
             
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              accept="image/*" 
-              onChange={handleFileChange} 
-              style={{ display: 'none' }} 
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              style={{ display: 'none' }}
             />
 
-            <div style={{ display: 'flex', gap: '12px' }}>
-           
-              <div 
-                onClick={triggerFileSelect}
-                style={{ 
-                  flex: 2, height: '110px', border: '2px dashed #e5ccb3', borderRadius: '24px', 
-                  backgroundColor: '#fffbf7', display: 'flex', flexDirection: 'column', 
-                  alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                  overflow: 'hidden', position: 'relative'
-                }}
-              >
-                {formData.imageUrl ? (
-                  
-                  <img 
-                    src={formData.imageUrl} 
-                    alt="Preview" 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                  />
-                ) : (
-                  <>
-                    <span style={{ fontSize: '20px' }}>📸</span>
-                    <span style={{ fontSize: '13px', fontWeight: '600', color: '#7c6e65', marginTop: '4px' }}>Tải ảnh lên</span>
-                    <span style={{ fontSize: '11px', color: '#a19286' }}>PNG, JPG (Tối đa 1 ảnh)</span>
-                  </>
-                )}
-              </div>
-
-              
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              {formData.images.map((img, idx) => (
+                <div key={idx} style={{ position: 'relative', width: '90px', height: '90px', borderRadius: '16px', overflow: 'hidden', border: '1px solid #e5ccb3' }}>
+                  <img src={img} alt={`Ảnh ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <button type="button" onClick={() => removeImage(idx)} style={{ position: 'absolute', top: '2px', right: '2px', background: 'rgba(0,0,0,0.6)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', cursor: 'pointer', lineHeight: '20px', padding: 0 }}>✕</button>
+                </div>
+              ))}
+              {formData.images.length < 5 && (
+                <div
+                  onClick={triggerFileSelect}
+                  style={{
+                    width: '90px', height: '90px', border: '2px dashed #e5ccb3', borderRadius: '16px',
+                    backgroundColor: '#fffbf7', display: 'flex', flexDirection: 'column',
+                    alignItems: 'center', justifyContent: 'center', cursor: 'pointer'
+                  }}
+                >
+                  <span style={{ fontSize: '18px' }}>📸</span>
+                  <span style={{ fontSize: '10px', color: '#a19286' }}>{formData.images.length}/5</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -216,12 +212,24 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
               })}
             </div>
 
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#7c6e65', marginBottom: '6px' }}>💰 Tiền cọc (đồng)</label>
-            <input 
-              type="number" min="0" placeholder="Ví dụ: 200000"
-              value={formData.depositRequired} onChange={(e) => setFormData({...formData, depositRequired: e.target.value})}
-              style={{ width: '100%', padding: '14px 18px', borderRadius: '20px', border: '1px solid #eaedd9', backgroundColor: '#fffbf7', outline: 'none', marginBottom: '16px', fontSize: '14px' }}
-            />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#7c6e65', marginBottom: '6px' }}>💰 Tiền cọc (đồng)</label>
+                <input
+                  type="number" min="0" placeholder="Ví dụ: 200000"
+                  value={formData.depositRequired} onChange={(e) => setFormData({...formData, depositRequired: e.target.value})}
+                  style={{ width: '100%', padding: '14px 18px', borderRadius: '20px', border: '1px solid #eaedd9', backgroundColor: '#fffbf7', outline: 'none', fontSize: '14px' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#7c6e65', marginBottom: '6px' }}>📍 Khu vực</label>
+                <input
+                  type="text" placeholder="Ví dụ: Quận 1, TP.HCM"
+                  value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  style={{ width: '100%', padding: '14px 18px', borderRadius: '20px', border: '1px solid #eaedd9', backgroundColor: '#fffbf7', outline: 'none', fontSize: '14px' }}
+                />
+              </div>
+            </div>
 
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#7c6e65', marginBottom: '6px' }}>📝 Mô tả chi tiết</label>
             <textarea 
@@ -265,7 +273,7 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
               if (formData.condition === 'Đã dùng (Used)') {
                 normalizedCondition = 'used';
               } else if (formData.condition === 'Như mới (Like New)') {
-                normalizedCondition = 'new'; // Like New treated as new for backend enum
+                normalizedCondition = 'like_new';
               }
               
               // Validate category if 'Khác' is selected
@@ -274,17 +282,17 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
                 return;
               }
 
-              // Submit with images array format for backend
               const submitData = {
                 name: formData.name,
                 category: formData.category === 'Khác' ? formData.customCategory.trim() : formData.category,
                 ageRange: formData.ageRange,
                 condition: normalizedCondition,
                 description: formData.description,
-                images: formData.imageUrl ? [formData.imageUrl] : [],
-                depositRequired: Number(formData.depositRequired) || 0
+                images: formData.images,
+                depositRequired: Number(formData.depositRequired) || 0,
+                location: formData.location.trim()
               };
-              
+
               onSubmit(submitData);
             }}
             style={{ padding: '12px 36px', borderRadius: '20px', border: 'none', backgroundColor: '#e58f12', color: 'white', fontWeight: '600', fontSize: '14px', cursor: 'pointer' }}

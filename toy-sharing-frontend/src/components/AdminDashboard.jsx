@@ -33,7 +33,8 @@ export default function AdminDashboard({ setPage }) {
     totalToys: 0,
     activeLoans: 0,
     pendingApprovals: 0,
-    chartData: [0, 0, 0, 0] 
+    chartData: [0, 0, 0, 0],
+    chartLabels: ['21 ngày trước', '14 ngày trước', '7 ngày trước', 'Hôm nay']
   });
   const [loading, setLoading] = useState(true);
 
@@ -59,7 +60,7 @@ export default function AdminDashboard({ setPage }) {
 
   
   const chartData = {
-    labels: ['Ngày 1', 'Ngày 10', 'Ngày 20', 'Hôm nay'],
+    labels: stats.chartLabels,
     datasets: [
       {
         fill: true,
@@ -140,7 +141,16 @@ export default function AdminDashboard({ setPage }) {
              Báo cáo vi phạm
           </button>
 
-          <button 
+          <button
+            onClick={() => setPage('admin-borrows')}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '14px 16px', borderRadius: '14px', border: 'none', backgroundColor: 'transparent', color: '#7c6e65', fontWeight: '550', fontSize: '14px', cursor: 'pointer', textAlign: 'left' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff8f2'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+             Quản lý lượt mượn
+          </button>
+
+          <button
             style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '14px 16px', borderRadius: '14px', border: 'none', backgroundColor: 'transparent', color: '#7c6e65', fontWeight: '550', fontSize: '14px', cursor: 'pointer', textAlign: 'left' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff8f2'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}

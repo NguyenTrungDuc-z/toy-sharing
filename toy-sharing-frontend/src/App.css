@@ -5,12 +5,17 @@
    Standardized Design Tokens & Color Harmony System
    ======================================================== */
 :root {
-  /* 🎨 1. CORE BRAND & THEME PALETTE */
-  --color-primary: #ea580c;           /* Vibrant warm brand orange */
-  --color-primary-hover: #c2410c;     /* WCAG AA (5.18:1) compliant hover */
-  --color-primary-light: #fff7ed;     /* 50 tint for pills, badges, active tabs */
-  --color-primary-border: #fed7aa;    /* 200 tint for soft borders */
+  /* 🎨 1. CORE BRAND & THEME PALETTE — teal-blue (sạch + tin cậy, hợp app giữ cọc) */
+  --color-primary: #0b6e8f;           /* Teal-blue brand (white text ~5.7:1) */
+  --color-primary-hover: #0a5e79;     /* Darker hover */
+  --color-primary-light: #e7f2f6;     /* Tint for chips, active tabs, soft fills */
+  --color-primary-border: #b3d7e2;    /* Soft brand border / focus ring */
   --color-on-primary: #ffffff;
+
+  /* 🟡 1b. HIGHLIGHT — mango (vui tươi: sao đánh giá, giá nổi bật, chip đang chọn). Chỉ dùng nền + chữ tối. */
+  --color-highlight: #ffb627;
+  --color-highlight-strong: #f59e0b;
+  --color-on-highlight: #16262e;
 
   /* 🌿 2. ACCENT & ESCROW (Giao dịch, cọc, duyệt đơn) */
   --color-accent: #16a34a;            /* Fresh trust green */
@@ -32,16 +37,16 @@
   --color-on-destructive: #ffffff;
 
   /* 📄 4. SURFACES & TYPOGRAPHY */
-  --color-background: #fffdf9;        /* Warm porcelain cream backdrop */
-  --color-foreground: #1c1917;        /* Stone 900 text (17.2:1 contrast) */
+  --color-background: #f6f8fa;        /* Cool white marketplace backdrop (không kem) */
+  --color-foreground: #16262e;        /* Dark slate (teal hue family), ~14:1 */
   --color-card: #ffffff;              /* Crisp white cards */
-  --color-card-foreground: #1c1917;
+  --color-card-foreground: #16262e;
 
-  --color-muted: #f6f1ea;             /* Neutral warm surface */
-  --color-muted-foreground: #57534e;  /* Stone 600 subtext (7.51:1 contrast) */
-  --color-border: #ede4dc;            /* Soft warm divider */
-  --color-border-hover: #cbd5e1;
-  --color-ring: #ea580c;
+  --color-muted: #eef2f4;             /* Cool neutral surface */
+  --color-muted-foreground: #4a5a62;  /* Slate subtext (~6.6:1 contrast) */
+  --color-border: #e1e8eb;            /* Soft cool divider */
+  --color-border-hover: #c3d0d6;
+  --color-ring: #0b6e8f;
 
   /* 🔄 5. BACKWARD-COMPATIBILITY ALIASES */
   --primary-color: var(--color-primary);
@@ -67,11 +72,11 @@
   --radius-lg: 24px;
   --radius-full: 9999px;
 
-  --shadow-sm: 0 1px 3px rgba(41, 37, 36, 0.04);
-  --shadow-md: 0 4px 16px rgba(41, 37, 36, 0.06);
-  --shadow-lg: 0 12px 32px rgba(41, 37, 36, 0.09);
-  --shadow-primary: 0 4px 14px rgba(234, 88, 12, 0.25);
-  --shadow-accent: 0 4px 14px rgba(22, 163, 74, 0.22);
+  --shadow-sm: 0 1px 2px rgba(22, 38, 46, 0.05);
+  --shadow-md: 0 4px 14px rgba(22, 38, 46, 0.07);
+  --shadow-lg: 0 12px 30px rgba(22, 38, 46, 0.10);
+  --shadow-primary: 0 2px 8px rgba(11, 110, 143, 0.22);
+  --shadow-accent: 0 2px 8px rgba(22, 163, 74, 0.20);
 
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
   --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);

@@ -29,3 +29,6 @@ Thumbs.db
 ~$*.xlsx
 .vscode/
 .idea/
+
+# Local Claude Code skills/tooling (installed locally, not product code)
+.claude/skills/

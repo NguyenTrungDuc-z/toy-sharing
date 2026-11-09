@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Layout } from 'antd';
 import './App.css';
 import Navbar from './components/Navbar';
 import Home from './components/Home';
@@ -109,12 +110,11 @@ export default function App() {
   };
 
   return (
-    <div>
+    <Layout style={{ minHeight: '100vh', background: 'var(--color-background)' }}>
       {/* Truyền page, setPage (đã đổi sang navigateTo), user và handleLogout vào Navbar */}
       <Navbar page={page} setPage={navigateTo} user={user} handleLogout={handleLogout} />
-      
-      {/* 📐 Nếu là admin thì bỏ padding '0 8%' để giao diện quản trị phân quyền bung tràn viền đẹp mắt */}
-      <div style={{ padding: user?.role === 'admin' ? '0' : '0 8%' }}>
+
+      <Layout.Content style={{ background: 'var(--color-background)' }}>
         {toast && (
           <div style={{
             position: 'fixed',
@@ -194,8 +194,8 @@ export default function App() {
         {page === 'admin-deposits' && user?.role === 'admin' && (
           <AdminDeposits setPage={navigateTo} />
         )}
-        
-      </div>
-    </div>
+
+      </Layout.Content>
+    </Layout>
   );
 }

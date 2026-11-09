@@ -65,11 +65,11 @@ const locationOptions = [
   })),
 ];
 
-export default function Home({ user, setPage, viewToyDetail }) {
+export default function Home({ user, setPage, viewToyDetail, initialCategory = 'all' }) {
   const { message } = App.useApp();
   const [toys, setToys] = useState([]);
   const [filterAge, setFilterAge] = useState('all');
-  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterCategory, setFilterCategory] = useState(initialCategory || 'all');
   const [filterCondition, setFilterCondition] = useState('all');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

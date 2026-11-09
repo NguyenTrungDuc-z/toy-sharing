@@ -16,7 +16,7 @@ const conditionMeta = {
 };
 const MANGO = '#ffb627';
 
-export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDetail }) {
+export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDetail, viewCategory }) {
   const { message } = App.useApp();
   const [toy, setToy] = useState(null);
   const [reviews, setReviews] = useState([]);
@@ -74,7 +74,7 @@ export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDeta
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px clamp(16px,4vw,24px) 72px' }}>
       <Breadcrumb style={{ marginBottom: 20 }} items={[
         { title: <a onClick={() => setPage?.('home')}><HomeOutlined /> Trang chủ</a> },
-        { title: toy.category },
+        { title: viewCategory ? <a onClick={() => viewCategory(toy.category)}>{toy.category}</a> : toy.category },
         { title: toy.name },
       ]} />
 

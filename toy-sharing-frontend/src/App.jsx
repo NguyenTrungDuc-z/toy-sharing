@@ -33,10 +33,17 @@ export default function App() {
   const [selectedToyId, setSelectedToyId] = useState(null);
   const [selectedOwnerId, setSelectedOwnerId] = useState(null);
   const [resetParams, setResetParams] = useState({ token: '', email: '' });
+  const [homeCategory, setHomeCategory] = useState('all');
 
   const viewToyDetail = (toyId) => {
     setSelectedToyId(toyId);
     navigateTo('toy-detail');
+  };
+  // Mở trang chủ đã lọc sẵn theo danh mục (ví dụ bấm "Hành động" ở breadcrumb)
+  const viewCategory = (cat) => {
+    setHomeCategory(cat || 'all');
+    setPage('home');
+    window.scrollTo({ top: 0 });
   };
   const viewOwnerProfile = (ownerId) => {
     setSelectedOwnerId(ownerId);
@@ -83,6 +90,7 @@ export default function App() {
 
   // Hàm chuyển trang thông minh, lưu trạng thái tránh mất dấu khi F5
   const navigateTo = (nextPage) => {
+    if (nextPage === 'home') setHomeCategory('all');
     setPage(nextPage);
     if (user?.role === 'admin') {
       localStorage.setItem('currentPage', nextPage);
@@ -134,11 +142,11 @@ export default function App() {
         )}
         
         {/* 🟢 KHỐI TRANG CỦA USER THƯỜNG: Chỉ mở nếu KHÔNG PHẢI admin */}
-        {page === 'home' && user?.role !== 'admin' && <Home user={user} setPage={navigateTo} viewToyDetail={viewToyDetail} />}
+        {page === 'home' && user?.role !== 'admin' && <Home user={user} setPage={navigateTo} viewToyDetail={viewToyDetail} initialCategory={homeCategory} />}
         {page === 'my-toys' && user?.role !== 'admin' && <MyToys user={user} setPage={navigateTo} />}
         {page === 'requests' && user?.role !== 'admin' && <Requests user={user} setPage={navigateTo} />}
         {page === 'favorites' && user?.role !== 'admin' && <Favorites setPage={navigateTo} viewToyDetail={viewToyDetail} />}
-        {page === 'toy-detail' && user?.role !== 'admin' && <ToyDetail toyId={selectedToyId} user={user} setPage={navigateTo} viewOwner={viewOwnerProfile} viewToyDetail={viewToyDetail} />}
+        {page === 'toy-detail' && user?.role !== 'admin' && <ToyDetail toyId={selectedToyId} user={user} setPage={navigateTo} viewOwner={viewOwnerProfile} viewToyDetail={viewToyDetail} viewCategory={viewCategory} />}
         {page === 'owner-profile' && user?.role !== 'admin' && <PublicProfile ownerId={selectedOwnerId} setPage={navigateTo} viewToyDetail={viewToyDetail} />}
         {page === 'profile' && user && user.role !== 'admin' && (
           <Profile

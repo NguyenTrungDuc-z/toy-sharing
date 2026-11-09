@@ -227,17 +227,17 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
   }
 
   return (
-    <div style={{ backgroundColor: '#fffbf7', minHeight: '100vh', paddingBottom: '60px' }}>
+    <div style={{ backgroundColor: 'var(--color-background)', minHeight: '100vh', paddingBottom: '60px' }}>
       <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '40px 20px' }}>
-        <h1 style={{ fontSize: '38px', fontWeight: '800', color: '#2d2520', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
+        <h1 style={{ fontSize: '38px', fontWeight: '800', color: 'var(--color-foreground)', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
           Quản lý yêu cầu
         </h1>
-        <p style={{ color: '#7c6e65', fontSize: '15px', margin: '0 0 28px 0' }}>
+        <p style={{ color: 'var(--color-muted-foreground)', fontSize: '15px', margin: '0 0 28px 0' }}>
           Theo dõi tiến trình mượn đồ chơi của bạn và xử lý các yêu cầu mượn từ phụ huynh khác.
         </p>
 
         {/* TABS ĐIỀU HƯỚNG RÕ RÀNG, ĐẦY ĐỦ SỐ LƯỢNG */}
-        <div style={{ display: 'flex', gap: '12px', borderBottom: '2px solid #f3ebd9', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '12px', borderBottom: '2px solid var(--color-border)', marginBottom: '24px', flexWrap: 'wrap' }}>
           {/* TAB 1: ĐƠN TÔI ĐI MƯỢN */}
           <button
             onClick={() => { setActiveTab('borrowing'); setBorrowFilter('all'); }}
@@ -733,13 +733,13 @@ export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
                           style={{
                             padding: '8px 18px',
                             borderRadius: '20px',
-                            backgroundColor: '#85581A',
+                            backgroundColor: 'var(--color-primary)',
                             color: 'white',
                             border: 'none',
                             fontWeight: '600',
                             fontSize: '13px',
                             cursor: 'pointer',
-                            boxShadow: '0 2px 8px rgba(133, 88, 26, 0.25)',
+                            boxShadow: 'var(--shadow-primary)',
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px'

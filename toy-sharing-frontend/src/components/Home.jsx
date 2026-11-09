@@ -211,11 +211,11 @@ export default function Home({ user, setPage, viewToyDetail }) {
 
         {/* CAPSULE SEARCH BAR: TẤT CẢ TRONG 1 THANH GỌN GÀNG */}
         <div style={{
-          background: '#ffffff',
+          background: 'var(--color-card)',
           borderRadius: '40px',
           padding: '6px 8px 6px 18px',
-          boxShadow: '0 8px 28px rgba(190, 110, 21, 0.1)',
-          border: '1px solid #ebdcd0',
+          boxShadow: 'var(--shadow-md)',
+          border: '1.5px solid var(--color-border)',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -225,7 +225,7 @@ export default function Home({ user, setPage, viewToyDetail }) {
         }}>
           {/* Ô nhập từ khóa */}
           <div style={{ flex: '2 1 200px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#be6e15', fontSize: '16px' }}>🔍</span>
+            <span style={{ color: 'var(--color-primary)', fontSize: '16px' }}>🔍</span>
             <input
               type="text"
               value={searchTerm}
@@ -322,16 +322,16 @@ export default function Home({ user, setPage, viewToyDetail }) {
         </div>
 
         {/* Mã voucher gọn gàng dưới thanh tìm kiếm */}
-        <div style={{ marginTop: '12px', fontSize: '13px', color: '#8a776a', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+        <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--color-muted-foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
           <span>🎉 Mã giảm 20k tiền cọc cho ba mẹ mới:</span>
           <strong
             onClick={() => handleCopyVoucher('TOYSHARENEW')}
             title="Nhấn để sao chép"
             style={{
-              color: '#be6e15',
+              color: 'var(--color-primary)',
               cursor: 'pointer',
               textDecoration: 'underline',
-              background: '#fff3e0',
+              background: 'var(--color-primary-light)',
               padding: '2px 8px',
               borderRadius: '6px'
             }}
@@ -362,9 +362,9 @@ export default function Home({ user, setPage, viewToyDetail }) {
                 gap: '8px',
                 padding: '10px 18px',
                 borderRadius: '24px',
-                border: isSelected ? '1px solid #be6e15' : '1px solid #ebdcd0',
-                background: isSelected ? '#fff5ec' : '#ffffff',
-                color: isSelected ? '#be6e15' : '#52473f',
+                border: isSelected ? '1.5px solid var(--color-primary)' : '1px solid var(--color-border)',
+                background: isSelected ? 'var(--color-primary-light)' : 'var(--color-card)',
+                color: isSelected ? 'var(--color-primary)' : 'var(--color-foreground)',
                 fontWeight: isSelected ? '700' : '500',
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -488,11 +488,11 @@ export default function Home({ user, setPage, viewToyDetail }) {
                 key={toy._id}
                 onClick={() => viewToyDetail && viewToyDetail(toy._id)}
                 style={{
-                  background: '#ffffff',
+                  background: 'var(--color-card)',
                   borderRadius: '20px',
                   overflow: 'hidden',
-                  border: '1px solid #f3ede7',
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+                  border: '1px solid var(--color-border)',
+                  boxShadow: 'var(--shadow-sm)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -501,11 +501,11 @@ export default function Home({ user, setPage, viewToyDetail }) {
                 }}
                 onMouseOver={e => {
                   e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = '0 10px 24px rgba(190, 110, 21, 0.08)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
                 }}
                 onMouseOut={e => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.03)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
                 }}
               >
                 {/* ẢNH ĐỒ CHƠI & NÚT YÊU THÍCH */}

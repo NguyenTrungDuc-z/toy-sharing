@@ -1,31 +1,83 @@
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&display=swap');
 
-/* Định nghĩa biến dùng chung cho toàn bộ 5 màn hình */
+/* ========================================================
+   TOYSHARE DESIGN SYSTEM (UI/UX PRO MAX STANDARD)
+   Standardized Design Tokens & Color Harmony System
+   ======================================================== */
 :root {
-  /* 🔥 HỆ MÀU SẮC ĐÃ SỬA: Chuẩn tone cam đất ấm, độ tương phản cao theo thiết kế */
-  --primary-color: #be6e15;       /* Sửa thành màu cam đất đậm, sắc nét của bản mẫu */
-  --primary-hover: #9c570b;       /* Màu khi di chuột vào sẽ trầm xuống một tông */
-  --bg-main: #fcf8f4;              /* Nền kem pastel mịn màng bọc quanh layout */
-  --bg-card: #ffffff;              
-  --text-main: #423023;            /* Màu chữ nâu cafe đậm giúp giao diện nhìn cực sang */
-  --text-muted: #8a776a;           /* Chữ mô tả phụ, mốc thông tin nhỏ */
-  
-  /* Màu trạng thái đổ từ thiết kế Quản lý yêu cầu & Quản lý đồ chơi */
-  --status-available: #e6f6ee;     /* Xanh lá pastel mềm */
-  --text-available: #15803d;       
-  --status-borrowing: #ede9fe;     /* Tím/Xanh dương pastel nhẹ */
-  --text-borrowing: #6d28d9;
-  --status-pending: #fef3c7;       /* Vàng pastel chờ duyệt */
+  /* 🎨 1. CORE BRAND & THEME PALETTE */
+  --color-primary: #ea580c;           /* Vibrant warm brand orange */
+  --color-primary-hover: #c2410c;     /* WCAG AA (5.18:1) compliant hover */
+  --color-primary-light: #fff7ed;     /* 50 tint for pills, badges, active tabs */
+  --color-primary-border: #fed7aa;    /* 200 tint for soft borders */
+  --color-on-primary: #ffffff;
+
+  /* 🌿 2. ACCENT & ESCROW (Giao dịch, cọc, duyệt đơn) */
+  --color-accent: #16a34a;            /* Fresh trust green */
+  --color-accent-hover: #15803d;     /* WCAG AA (5.02:1) */
+  --color-accent-light: #f0fdf4;
+  --color-accent-border: #bbf7d0;
+  --color-on-accent: #ffffff;
+
+  /* 🔔 3. STATUS & FEEDBACK */
+  --color-warning: #d97706;           /* Amber notice */
+  --color-warning-text: #92400e;      /* WCAG AAA (7.31:1) */
+  --color-warning-light: #fffbeb;
+  --color-warning-border: #fde68a;
+
+  --color-destructive: #dc2626;       /* Error / Cancel red */
+  --color-destructive-hover: #b91c1c;
+  --color-destructive-light: #fef2f2;
+  --color-destructive-border: #fecaca;
+  --color-on-destructive: #ffffff;
+
+  /* 📄 4. SURFACES & TYPOGRAPHY */
+  --color-background: #fffdf9;        /* Warm porcelain cream backdrop */
+  --color-foreground: #1c1917;        /* Stone 900 text (17.2:1 contrast) */
+  --color-card: #ffffff;              /* Crisp white cards */
+  --color-card-foreground: #1c1917;
+
+  --color-muted: #f6f1ea;             /* Neutral warm surface */
+  --color-muted-foreground: #57534e;  /* Stone 600 subtext (7.51:1 contrast) */
+  --color-border: #ede4dc;            /* Soft warm divider */
+  --color-border-hover: #cbd5e1;
+  --color-ring: #ea580c;
+
+  /* 🔄 5. BACKWARD-COMPATIBILITY ALIASES */
+  --primary-color: var(--color-primary);
+  --primary-hover: var(--color-primary-hover);
+  --bg-main: var(--color-background);
+  --bg-card: var(--color-card);
+  --text-main: var(--color-foreground);
+  --text-muted: var(--color-muted-foreground);
+  --border-color: var(--color-border);
+
+  /* Trạng thái mượn trả */
+  --status-available: #dcfce7;
+  --text-available: #166534;
+  --status-borrowing: #f0f9ff;
+  --text-borrowing: #0369a1;
+  --status-pending: #fef3c7;
   --text-pending: #b45309;
 
-  /* Định dạng cấu trúc giao diện */
-  --font-family: 'Lexend', sans-serif; /* Ép nhận font Lexend tròn trịa, hiện đại */
-  --radius-lg: 28px;               /* Tăng bo góc lên 28px cho đúng độ bo của Card gốc */
-  --radius-md: 16px;               /* Bo góc cho Nút bấm và Ô Input */
-  --shadow-sm: 0 10px 30px rgba(190, 110, 21, 0.04); /* Đổ bóng nhạt theo tone cam chủ đạo */
+  /* 📐 6. SPACING, RADII & SHADOWS */
+  --font-family: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  --shadow-sm: 0 1px 3px rgba(41, 37, 36, 0.04);
+  --shadow-md: 0 4px 16px rgba(41, 37, 36, 0.06);
+  --shadow-lg: 0 12px 32px rgba(41, 37, 36, 0.09);
+  --shadow-primary: 0 4px 14px rgba(234, 88, 12, 0.25);
+  --shadow-accent: 0 4px 14px rgba(22, 163, 74, 0.22);
+
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Toàn bộ cấu hình gốc cho trang web */
+/* Base resets & typography */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -34,88 +86,183 @@
 }
 
 body {
-  background-color: var(--bg-main);
-  color: var(--text-main);
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* --- 🛑 BỘ UI KITS DÙNG CHUNG CHO 5 MÀN HÌNH --- */
+::selection {
+  background-color: #fed7aa;
+  color: #9a3412;
+}
 
-/* 1. Nút bấm chuẩn (Bo tròn dẹt mềm mại theo nút "Mượn ngay" trong mẫu) */
+/* Custom warm scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-background);
+}
+::-webkit-scrollbar-thumb {
+  background: #e2d7cd;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #cbbbae;
+}
+
+/* ========================================================
+   UI/UX PRO MAX COMPONENT KITS
+   ======================================================== */
+
+/* 1. NÚT CHÍNH (PRIMARY BUTTON) */
 .btn-primary {
-  background-color: var(--primary-color);
-  color: white;
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
   border: none;
-  padding: 12px 28px;
-  border-radius: 30px;            /* Ép nút thành dạng viên thuốc giống hệt thiết kế */
-  font-weight: 500;
-  font-size: 15px;
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.25s ease;
+  transition: var(--transition-normal);
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  box-shadow: var(--shadow-primary);
 }
 .btn-primary:hover {
-  background-color: var(--primary-hover);
+  background-color: var(--color-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(234, 88, 12, 0.35);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 2. NÚT PHỤ (SECONDARY BUTTON - HÀI HÒA TONE WARM) */
+.btn-secondary {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary-hover);
+  border: 1px solid var(--color-primary-border);
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-secondary:hover {
+  background-color: #ffedd5;
+  border-color: #fdba74;
+  color: #9a3412;
+  transform: translateY(-1px);
+}
+.btn-secondary:active {
+  transform: translateY(0);
+}
+
+/* 3. NÚT GIAO DỊCH / KÝ QUỸ (ACCENT BUTTON) */
+.btn-accent {
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: var(--shadow-accent);
+}
+.btn-accent:hover {
+  background-color: var(--color-accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(22, 163, 74, 0.32);
+}
+
+/* 4. NÚT NGUY HIỂM / HUỶ (DANGER BUTTON) */
+.btn-danger {
+  background-color: var(--color-destructive);
+  color: var(--color-on-destructive);
+  border: none;
+  padding: 10px 24px;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition-normal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn-danger:hover {
+  background-color: var(--color-destructive-hover);
   transform: translateY(-1px);
 }
 
-/* Nút phụ (Màu xanh/xám nhạt pastel như nút "Tìm hiểu thêm") */
-.btn-secondary {
-  background-color: #e2e4ff;
-  color: #4f46e5;
-  border: none;
-  padding: 12px 28px;
-  border-radius: 30px;
-  font-weight: 500;
-  font-size: 15px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-}
-.btn-secondary:hover {
-  background-color: #d1d5ff;
-}
-
-/* 2. Ô nhập liệu chuẩn (Nâng cấp border mượt và nhạt hơn) */
+/* 5. Ô NHẬP LIỆU CHUẨN (FORM INPUT) */
 .form-input {
   width: 100%;
-  padding: 14px 18px;
-  border: 1px solid #ebdcd0;      /* Border màu kem nhạt đồng điệu */
-  background-color: var(--bg-card);
+  padding: 12px 18px;
+  border: 1.5px solid var(--color-border);
+  background-color: var(--color-card);
   border-radius: var(--radius-md);
-  color: var(--text-main);
-  font-size: 15px;
+  color: var(--color-foreground);
+  font-size: 14px;
   outline: none;
-  transition: all 0.2s;
+  transition: var(--transition-fast);
 }
 .form-input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 4px rgba(190, 110, 21, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.15);
+}
+.form-input::placeholder {
+  color: #a8a29e;
 }
 
-/* 3. Thẻ Card chứa đồ chơi (Thêm hiệu ứng hover nhấc mượt mà) */
+/* 6. THẺ ĐỒ CHƠI (TOY CARD) */
 .toy-card {
-  background: var(--bg-card);
+  background: var(--color-card);
   border-radius: var(--radius-lg);
-  padding: 16px;                  /* Thắt chặt padding để ảnh và chữ ôm khít gọn gàng */
+  padding: 16px;
   box-shadow: var(--shadow-sm);
-  border: 1px solid #fcf2e9;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid var(--color-border);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .toy-card:hover {
-  transform: translateY(-6px);     /* Di chuột vào card sẽ nhấc nhẹ lên cực mượt */
-  box-shadow: 0 15px 35px rgba(190, 110, 21, 0.08);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-border);
 }
 
-/* 4. Định dạng Tag Trạng thái */
+/* 7. BADGES TRẠNG THÁI */
 .badge {
-  padding: 6px 14px;
-  border-radius: 20px;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 600;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .badge-available { background: var(--status-available); color: var(--text-available); }
 .badge-borrowing { background: var(--status-borrowing); color: var(--text-borrowing); }

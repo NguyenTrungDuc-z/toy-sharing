@@ -77,7 +77,7 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
 
   // Giao diện Khách & Người dùng thường: ĐƠN GIẢN, TINH TẾ, HIỆN ĐẠI
   return (
-    <header style={{ position: "sticky", top: 0, zIndex: 1100, background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(10px)", borderBottom: "1px solid #f1eae4" }}>
+    <header style={{ position: "sticky", top: 0, zIndex: 1100, background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(10px)", borderBottom: "1px solid var(--color-border)" }}>
       <nav
         style={{
           display: "flex",
@@ -96,7 +96,7 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
             gap: "8px",
             fontSize: "22px",
             fontWeight: "800",
-            color: "var(--primary-color)",
+            color: "var(--color-primary)",
             cursor: "pointer",
           }}
           onClick={() => setPage("home")}
@@ -123,8 +123,8 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                 key={tab.key}
                 onClick={() => setPage(tab.key)}
                 style={{
-                  color: isActive ? "var(--primary-color)" : "#6b584a",
-                  background: isActive ? "#fff5ec" : "transparent",
+                  color: isActive ? "var(--color-primary)" : "var(--color-muted-foreground)",
+                  background: isActive ? "var(--color-primary-light)" : "transparent",
                   border: "none",
                   padding: "8px 16px",
                   borderRadius: "20px",

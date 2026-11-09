@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import ReviewModal from './ReviewModal';
 import BorrowActionModal from './BorrowActionModal';
+import ChatModal from './ChatModal';
 
 const getUserId = () => {
   const storedUserId = localStorage.getItem('userId');
@@ -29,6 +30,7 @@ export default function Requests() {
   const [reviewedRequestIds, setReviewedRequestIds] = useState([]);
   const [selectedRequestForReview, setSelectedRequestForReview] = useState(null);
   const [selectedRequestForAction, setSelectedRequestForAction] = useState(null);
+  const [chatRequest, setChatRequest] = useState(null);
 
   const userId = getUserId();
 
@@ -279,9 +281,19 @@ export default function Requests() {
                 </div>
 
                 <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f5ede6', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '13px', color: '#7c6e65' }}>
-                    Hạn trả: {formatShortDate(item.dueDate)}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '13px', color: '#7c6e65' }}>
+                      Hạn trả: {formatShortDate(item.dueDate)}
+                    </span>
+                    {item.toyId && !['rejected', 'cancelled'].includes(item.status) && (
+                      <button
+                        onClick={() => setChatRequest(item)}
+                        style={{ padding: '6px 14px', borderRadius: '16px', backgroundColor: '#eef2ff', color: '#4f46e5', border: 'none', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}
+                      >
+                        💬 Nhắn tin
+                      </button>
+                    )}
+                  </div>
 
                   {activeTab === 'history' ? (
                     item.status === 'returned' && (item.borrowerId?._id === userId || item.borrowerId === userId) ? (
@@ -486,6 +498,20 @@ export default function Requests() {
           onSuccess={() => {
             refreshCurrentTab();
           }}
+        />
+
+        <ChatModal
+          isOpen={!!chatRequest}
+          onClose={() => setChatRequest(null)}
+          borrowRequest={chatRequest}
+          currentUserId={userId}
+          counterpartName={
+            chatRequest
+              ? ((chatRequest.ownerId?._id === userId || chatRequest.ownerId === userId)
+                  ? (chatRequest.borrowerId?.name || 'Người mượn')
+                  : (chatRequest.toyId?.ownerId?.name || chatRequest.ownerId?.name || 'Chủ sở hữu'))
+              : ''
+          }
         />
 
         {toast && (

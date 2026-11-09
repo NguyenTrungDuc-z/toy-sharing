@@ -84,7 +84,8 @@ export default function AdminReports({ setPage }) {
       <aside style={{ width: '260px', flexShrink: 0, background: '#fff', borderRight: '1px solid #f1eae4', padding: '28px 20px' }}>
         <button type="button" onClick={() => setPage('admin-dashboard')} style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 0, borderRadius: '8px', background: 'transparent', color: '#7c6e65', cursor: 'pointer', marginBottom: '8px' }}>Bảng điều khiển</button>
         <button type="button" onClick={() => setPage('toy-moderation')} style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 0, borderRadius: '8px', background: 'transparent', color: '#7c6e65', cursor: 'pointer', marginBottom: '8px' }}>Kiểm soát bài đăng</button>
-        <button type="button" style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 0, borderRadius: '8px', background: '#f8e8df', color: '#8f362f', fontWeight: 700, cursor: 'default' }}>Báo cáo vi phạm</button>
+        <button type="button" style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 0, borderRadius: '8px', background: '#f8e8df', color: '#8f362f', fontWeight: 700, cursor: 'default', marginBottom: '8px' }}>Báo cáo vi phạm</button>
+        <button type="button" onClick={() => setPage('admin-borrows')} style={{ width: '100%', textAlign: 'left', padding: '12px 14px', border: 0, borderRadius: '8px', background: 'transparent', color: '#7c6e65', cursor: 'pointer' }}>Quản lý lượt mượn</button>
       </aside>
 
       <main style={{ flex: 1, minWidth: 0, padding: '36px clamp(20px, 4vw, 52px)', overflowY: 'auto' }}>

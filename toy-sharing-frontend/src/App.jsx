@@ -14,6 +14,10 @@ import ToyModeration from './components/ToyModeration';
 import Profile from './components/Profile';
 import AdminReports from './components/AdminReports';
 import Favorites from './components/Favorites';
+import ToyDetail from './components/ToyDetail';
+import PublicProfile from './components/PublicProfile';
+import AdminBorrows from './components/AdminBorrows';
+import ForgotPassword from './components/ForgotPassword';
 
 export default function App() {
   // Trạng thái trang hiện tại: 'home', 'my-toys', 'login', 'register', 'admin-dashboard', 'role-management'
@@ -22,6 +26,19 @@ export default function App() {
   // Trạng thái người dùng đăng nhập
   const [user, setUser] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // ID được chọn để xem chi tiết (đồ chơi / hồ sơ chủ sở hữu)
+  const [selectedToyId, setSelectedToyId] = useState(null);
+  const [selectedOwnerId, setSelectedOwnerId] = useState(null);
+
+  const viewToyDetail = (toyId) => {
+    setSelectedToyId(toyId);
+    navigateTo('toy-detail');
+  };
+  const viewOwnerProfile = (ownerId) => {
+    setSelectedOwnerId(ownerId);
+    navigateTo('owner-profile');
+  };
 
   // Khi ứng dụng chạy, kiểm tra xem người dùng đã đăng nhập trước đó chưa
   useEffect(() => {
@@ -99,10 +116,12 @@ export default function App() {
         )}
         
         {/* 🟢 KHỐI TRANG CỦA USER THƯỜNG: Chỉ mở nếu KHÔNG PHẢI admin */}
-        {page === 'home' && user?.role !== 'admin' && <Home user={user} setPage={navigateTo} />}
+        {page === 'home' && user?.role !== 'admin' && <Home user={user} setPage={navigateTo} viewToyDetail={viewToyDetail} />}
         {page === 'my-toys' && user?.role !== 'admin' && <MyToys user={user} setPage={navigateTo} />}
         {page === 'requests' && user?.role !== 'admin' && <Requests user={user} setPage={navigateTo} />}
-        {page === 'favorites' && user?.role !== 'admin' && <Favorites setPage={navigateTo} />}
+        {page === 'favorites' && user?.role !== 'admin' && <Favorites setPage={navigateTo} viewToyDetail={viewToyDetail} />}
+        {page === 'toy-detail' && user?.role !== 'admin' && <ToyDetail toyId={selectedToyId} user={user} setPage={navigateTo} viewOwner={viewOwnerProfile} />}
+        {page === 'owner-profile' && user?.role !== 'admin' && <PublicProfile ownerId={selectedOwnerId} setPage={navigateTo} viewToyDetail={viewToyDetail} />}
         {page === 'profile' && user && user.role !== 'admin' && (
           <Profile
             user={user}
@@ -124,6 +143,7 @@ export default function App() {
           }
         }} />}
         {page === 'register' && <Register setPage={navigateTo} />}
+        {page === 'forgot-password' && <ForgotPassword setPage={navigateTo} />}
         
         {/* 🛡️ KHỐI TRANG CỦA ADMIN: Chỉ mở khi đúng quyền admin */}
         {page === 'admin-dashboard' && user?.role === 'admin' && (
@@ -141,6 +161,10 @@ export default function App() {
 
         {page === 'admin-reports' && user?.role === 'admin' && (
           <AdminReports setPage={navigateTo} />
+        )}
+
+        {page === 'admin-borrows' && user?.role === 'admin' && (
+          <AdminBorrows setPage={navigateTo} />
         )}
         
       </div>

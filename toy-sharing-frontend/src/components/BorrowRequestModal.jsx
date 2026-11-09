@@ -98,7 +98,12 @@ export default function BorrowRequestModal({ isOpen, onClose, toy, user, onBorro
                   <span style={{ fontSize: '14px', color: '#7c6e65', fontWeight: '600' }}>Phí cọc bảo trì:</span>
                   <span style={{ fontSize: '18px', color: '#a86a2c', fontWeight: '700' }}>{(toy.depositRequired || 0).toLocaleString()}đ</span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#a19286', fontStyle: 'italic' }}>(*) Số tiền này sẽ được hoàn trả 100% khi trả đồ chơi nguyên vẹn.</div>
+                <div style={{ fontSize: '11px', color: '#a19286', fontStyle: 'italic', marginBottom: '12px' }}>(*) Số tiền này sẽ được hoàn trả 100% khi trả đồ chơi nguyên vẹn.</div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button type="button" onClick={() => showToast('Thanh toán cọc online (VNPay/MoMo) sắp ra mắt! Hiện tại cọc được giao trực tiếp cho chủ đồ chơi.', 'info')} title="Sắp ra mắt" style={{ flex: 1, padding: '10px', borderRadius: '12px', border: '1px solid #e2d8cf', background: '#fff', color: '#a19286', fontSize: '12px', fontWeight: '600', cursor: 'not-allowed', opacity: 0.8 }}>
+                    💳 Thanh toán online (sắp ra mắt)
+                  </button>
+                </div>
               </div>
             </div>
 

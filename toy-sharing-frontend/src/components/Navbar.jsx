@@ -1,4 +1,5 @@
 import { useState } from "react";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar({ page, setPage, user, handleLogout }) {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -175,7 +176,7 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
 
      
       <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-       
+        {user && <NotificationBell setPage={setPage} />}
 
         {user ? (
           <div style={{ position: "relative" }}>

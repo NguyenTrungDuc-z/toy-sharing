@@ -34,25 +34,30 @@ exports.createReview = async (req, res) => {
       return res.status(400).json({ message: 'Bạn không thể tự đánh giá đồ chơi của chính mình!' });
     }
 
-    // Nếu gửi kèm mã yêu cầu mượn (borrowRequestId), kiểm tra quyền và tránh đánh giá trùng lặp
-    if (borrowRequestId) {
-      if (!mongoose.isValidObjectId(borrowRequestId)) {
-        return res.status(400).json({ message: 'Mã yêu cầu mượn không hợp lệ!' });
-      }
+    if (!borrowRequestId) {
+      return res.status(400).json({ message: 'Cần cung cấp mã yêu cầu mượn (borrowRequestId)!' });
+    }
 
-      const borrowRequest = await BorrowRequest.findById(borrowRequestId);
-      if (!borrowRequest) {
-        return res.status(404).json({ message: 'Không tìm thấy yêu cầu mượn tương ứng!' });
-      }
+    if (!mongoose.isValidObjectId(borrowRequestId)) {
+      return res.status(400).json({ message: 'Mã yêu cầu mượn không hợp lệ!' });
+    }
 
-      if (borrowRequest.borrowerId.toString() !== reviewerId) {
-        return res.status(403).json({ message: 'Bạn không phải là người mượn đơn này!' });
-      }
+    const borrowRequest = await BorrowRequest.findById(borrowRequestId);
+    if (!borrowRequest) {
+      return res.status(404).json({ message: 'Không tìm thấy yêu cầu mượn tương ứng!' });
+    }
 
-      const existingReview = await Review.findOne({ borrowRequestId });
-      if (existingReview) {
-        return res.status(400).json({ message: 'Bạn đã gửi đánh giá cho lượt mượn này rồi!' });
-      }
+    if (borrowRequest.borrowerId.toString() !== reviewerId) {
+      return res.status(403).json({ message: 'Bạn không phải là người mượn đơn này!' });
+    }
+
+    if (borrowRequest.status !== 'returned') {
+      return res.status(400).json({ message: 'Chỉ được đánh giá sau khi đã trả đồ chơi!' });
+    }
+
+    const existingReview = await Review.findOne({ borrowRequestId });
+    if (existingReview) {
+      return res.status(400).json({ message: 'Bạn đã gửi đánh giá cho lượt mượn này rồi!' });
     }
 
     // Tạo bản ghi đánh giá
@@ -90,7 +95,6 @@ exports.createReview = async (req, res) => {
       toyRating: { avg: toyAvg, count: toyCount }
     });
   } catch (err) {
-    console.error('Lỗi khi tạo đánh giá:', err);
     res.status(500).json({ message: 'Lỗi server khi gửi đánh giá', error: err.message });
   }
 };
@@ -164,6 +168,15 @@ exports.deleteReview = async (req, res) => {
       : 0;
     await Toy.findByIdAndUpdate(review.toyId, {
       rating: { avg: toyAvg, count: toyCount }
+    });
+
+    const ownerReviews = await Review.find({ targetOwnerId: review.targetOwnerId });
+    const ownerCount = ownerReviews.length;
+    const ownerAvg = ownerCount > 0
+      ? Number((ownerReviews.reduce((sum, r) => sum + r.rating, 0) / ownerCount).toFixed(1))
+      : 0;
+    await User.findByIdAndUpdate(review.targetOwnerId, {
+      rating: { avg: ownerAvg, count: ownerCount }
     });
 
     res.status(200).json({ message: 'Đã xóa đánh giá thành công!' });

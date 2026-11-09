@@ -3,7 +3,7 @@ const Toy = require('../models/Toy');
 const mongoose = require('mongoose');
 const { autoReturnOverdueBorrows } = require('../services/overdueService');
 
-const getCurrentUserId = (req) => req.userId || req.headers['x-user-id'] || req.query.userId || req.body.borrowerId;
+const getCurrentUserId = (req) => req.userId;
 
 const assertOwner = (toy, userId) => {
   const ownerId = typeof toy.ownerId === 'object' ? toy.ownerId._id || toy.ownerId : toy.ownerId;
@@ -14,12 +14,10 @@ const assertOwner = (toy, userId) => {
 exports.createRequest = async (req, res) => {
   try {
     const { toyId, dueDate, note } = req.body;
-    const borrowerId = req.userId || req.body.borrowerId;
-
-    console.log('[DEBUG] createRequest input:', { toyId, dueDate, note, borrowerId });
+    const borrowerId = req.userId;
 
     if (!borrowerId) {
-      return res.status(400).json({ message: 'Thiếu borrowerId / user đăng nhập' });
+      return res.status(400).json({ message: 'Vui lòng đăng nhập!' });
     }
 
     if (!toyId) {
@@ -43,6 +41,13 @@ exports.createRequest = async (req, res) => {
       return res.status(400).json({ message: 'Bạn không thể mượn đồ chơi của chính mình!' });
     }
 
+    const existingPending = await BorrowRequest.findOne({
+      toyId, borrowerId, status: 'pending'
+    });
+    if (existingPending) {
+      return res.status(400).json({ message: 'Bạn đã có yêu cầu mượn đang chờ duyệt cho đồ chơi này!' });
+    }
+
     const newRequest = await BorrowRequest.create({
       toyId: toyId,
       ownerId: toy.ownerId,
@@ -56,7 +61,6 @@ exports.createRequest = async (req, res) => {
 
     res.status(201).json({ message: 'Gửi yêu cầu mượn thành công!', data: newRequest });
   } catch (error) {
-    console.error('Lỗi khi tạo yêu cầu mượn:', error);
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
   }
 };
@@ -96,11 +100,8 @@ exports.confirmDeposit = async (req, res) => {
       { status: 'borrowed' },
       { new: true }
     );
-    console.log('[DEBUG] confirmDeposit - Updated toy status:', updatedToy.status);
-
     res.status(200).json({ message: 'Chủ đồ đã xác nhận nhận cọc! Quá trình mượn bắt đầu.', data: request });
   } catch (error) {
-    console.error('Lỗi khi xác nhận cọc:', error);
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
   }
 };
@@ -140,11 +141,8 @@ exports.confirmReturnAndRefund = async (req, res) => {
       { status: 'available' },
       { new: true }
     );
-    console.log('[DEBUG] confirmReturnAndRefund - Updated toy status:', updatedToy.status);
-
     res.status(200).json({ message: 'Đã nhận lại đồ chơi và hoàn cọc thành công!', data: request });
   } catch (error) {
-    console.error('Lỗi khi trả đồ:', error);
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
   }
 };
@@ -243,9 +241,13 @@ exports.approveRequest = async (req, res) => {
     request.approvedDate = new Date();
     await request.save();
 
+    await BorrowRequest.updateMany(
+      { toyId: request.toyId, _id: { $ne: request._id }, status: 'pending' },
+      { status: 'rejected' }
+    );
+
     res.status(200).json({ message: 'Đã duyệt yêu cầu mượn!', data: request });
   } catch (error) {
-    console.error('Lỗi khi duyệt yêu cầu:', error);
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
   }
 };
@@ -280,6 +282,34 @@ exports.rejectRequest = async (req, res) => {
     res.status(200).json({ message: 'Đã từ chối yêu cầu mượn!', data: request });
   } catch (error) {
     console.error('Lỗi khi từ chối yêu cầu:', error);
+    res.status(500).json({ message: 'Lỗi server!', error: error.message });
+  }
+};
+
+// 8b. NGƯỜI MƯỢN: Huỷ yêu cầu mượn (chỉ khi pending)
+exports.cancelRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const userId = getCurrentUserId(req);
+
+    const request = await BorrowRequest.findById(requestId);
+    if (!request) {
+      return res.status(404).json({ message: 'Không tìm thấy yêu cầu mượn!' });
+    }
+
+    if (request.borrowerId.toString() !== userId.toString()) {
+      return res.status(403).json({ message: 'Chỉ người gửi yêu cầu mới được huỷ!' });
+    }
+
+    if (request.status !== 'pending') {
+      return res.status(400).json({ message: 'Chỉ có thể huỷ yêu cầu đang ở trạng thái chờ duyệt!' });
+    }
+
+    request.status = 'cancelled';
+    await request.save();
+
+    res.status(200).json({ message: 'Đã huỷ yêu cầu mượn!', data: request });
+  } catch (error) {
     res.status(500).json({ message: 'Lỗi server!', error: error.message });
   }
 };

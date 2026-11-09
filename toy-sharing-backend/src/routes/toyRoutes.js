@@ -14,7 +14,7 @@ router.get('/', toyController.getAllToys);
 router.get('/my-toys', auth, toyController.getMyToys);
 router.post('/', auth, toyController.createToy);
 router.put('/:id', auth, toyController.updateToy);
-router.delete('/:id', toyController.deleteToy);
+router.delete('/:id', auth, toyController.deleteToy);
 
 // ==========================================
 // 3. TƯƠNG TÁC (Báo cáo & Yêu thích)
@@ -28,5 +28,10 @@ router.delete('/:id/favorite', auth, toyController.removeFavorite);
 // ==========================================
 router.get('/pending', auth, toyController.getPendingToys);
 router.put('/:id/moderate', auth, toyController.moderateToy);
+
+// ==========================================
+// 5. CHI TIẾT ĐỒ CHƠI (Public - đặt cuối để không bắt /my-toys, /pending)
+// ==========================================
+router.get('/:id', toyController.getToyById);
 
 module.exports = router;

@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const Toy = require('../models/Toy');
 const User = require('../models/User');
 const Report = require('../models/Report');
+const BorrowRequest = require('../models/BorrowRequest');
+const Review = require('../models/Review');
 const { autoReturnOverdueBorrows } = require('../services/overdueService');
 
 const toySortOptions = {
@@ -67,6 +69,20 @@ exports.getAllToys = async (req, res) => {
     } catch (err) {
         console.error("Error fetching toys:", err);
         res.status(500).json({ message: "Server error", error: err.message });
+    }
+};
+
+// 1b. LẤY CHI TIẾT 1 TOY
+exports.getToyById = async (req, res) => {
+    try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: 'Mã đồ chơi không hợp lệ!' });
+        }
+        const toy = await Toy.findById(req.params.id).populate('ownerId', 'name email avatar rating');
+        if (!toy) return res.status(404).json({ message: 'Không tìm thấy đồ chơi!' });
+        res.json(toy);
+    } catch (err) {
+        res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
@@ -142,12 +158,9 @@ exports.removeFavorite = async (req, res) => {
 exports.getMyToys = async (req, res) => {
     try {
         await autoReturnOverdueBorrows();
-        console.log("[DEBUG] Fetching my-toys for userId:", req.userId);
         const toys = await Toy.find({ ownerId: req.userId }).sort({ createdAt: -1 });
-        console.log("[DEBUG] Found toys count:", toys.length);
         res.json(toys);
     } catch (err) {
-        console.error("[ERROR] Fetching my-toys:", err);
         res.status(500).json({ message: "Server error", error: err.message });
     }
 };
@@ -203,7 +216,6 @@ exports.createToy = async (req, res) => {
         await toy.save();
         res.status(201).json({ message: "Đồ chơi đã được đăng thành công! Chờ duyệt từ admin.", toy });
     } catch (err) {
-        console.error("[ERROR] Creating toy:", err);
         res.status(500).json({ message: "Lỗi khi lưu dữ liệu đồ chơi", error: err.message });
     }
 };
@@ -219,7 +231,7 @@ exports.updateToy = async (req, res) => {
 
         const { name, description, category, ageRange, condition, depositRequired, imageUrl, images } =
             req.body;
-        const updateData = { name, description, category, ageRange, condition, depositRequired };
+        const updateData = { name, description, category, ageRange, condition, depositRequired, status: 'pending' };
         if (images) {
             updateData.images = images;
         } else if (imageUrl) {
@@ -230,7 +242,7 @@ exports.updateToy = async (req, res) => {
             updateData,
             { new: true }
         );
-        res.json(updatedToy);
+        res.json({ message: "Đã cập nhật đồ chơi! Chờ admin duyệt lại.", toy: updatedToy });
     } catch (err) {
         res.status(500).json({ message: "Server error", error: err.message });
     }
@@ -242,6 +254,10 @@ exports.moderateToy = async (req, res) => {
         const currentUser = await User.findById(req.userId);
         if (currentUser.role !== "admin") {
             return res.status(403).json({ message: "Admin only" });
+        }
+        const allowedStatuses = ['available', 'rejected', 'pending'];
+        if (!allowedStatuses.includes(req.body.status)) {
+            return res.status(400).json({ message: `Trạng thái không hợp lệ! Chỉ cho phép: ${allowedStatuses.join(', ')}` });
         }
         const toy = await Toy.findByIdAndUpdate(
             req.params.id,
@@ -260,9 +276,31 @@ exports.deleteToy = async (req, res) => {
     try {
         const toy = await Toy.findById(req.params.id);
         if (!toy) return res.status(404).json({ message: "Toy not found" });
+
+        const currentUser = await User.findById(req.userId);
+        const isOwner = toy.ownerId.toString() === req.userId;
+        const isAdmin = currentUser?.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ message: "Bạn không có quyền xóa đồ chơi này!" });
+        }
+
+        const activeBorrow = await BorrowRequest.findOne({
+            toyId: toy._id,
+            status: { $in: ['pending', 'approved', 'borrowing'] }
+        });
+        if (activeBorrow) {
+            return res.status(400).json({ message: "Không thể xóa đồ chơi đang trong quá trình mượn/trả!" });
+        }
+
+        await Promise.all([
+            BorrowRequest.deleteMany({ toyId: toy._id }),
+            Review.deleteMany({ toyId: toy._id }),
+            Report.deleteMany({ toyId: toy._id }),
+            User.updateMany({}, { $pull: { favorites: toy._id } }),
+        ]);
         await Toy.findByIdAndDelete(req.params.id);
-        res.json({ message: "Toy deleted" });
+        res.json({ message: "Đã xóa đồ chơi và dữ liệu liên quan!" });
     } catch (err) {
-        res.status(500).json({ message: "Server error" });
+        res.status(500).json({ message: "Server error", error: err.message });
     }
 };

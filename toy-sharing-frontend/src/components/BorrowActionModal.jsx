@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import ImageUploader from './ImageUploader';
 
 export default function BorrowActionModal({ isOpen, onClose, item, onSuccess, showToast }) {
   // mode: 'menu' | 'extend' | 'return_early' | 'return_on_time'
   const [mode, setMode] = useState('menu');
   const [newDueDate, setNewDueDate] = useState('');
   const [note, setNote] = useState('');
+  const [returnImages, setReturnImages] = useState([]);
   const [loading, setLoading] = useState(false);
 
   if (!isOpen || !item) return null;
@@ -28,6 +30,7 @@ export default function BorrowActionModal({ isOpen, onClose, item, onSuccess, sh
     setMode('menu');
     setNewDueDate('');
     setNote('');
+    setReturnImages([]);
     onClose();
   };
 
@@ -66,7 +69,7 @@ export default function BorrowActionModal({ isOpen, onClose, item, onSuccess, sh
       const token = localStorage.getItem('token');
       const res = await axios.patch(
         `http://localhost:5000/api/borrows/${item._id}/report-return`,
-        { returnType, note: note.trim() },
+        { returnType, note: note.trim(), returnImages },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -283,6 +286,10 @@ export default function BorrowActionModal({ isOpen, onClose, item, onSuccess, sh
                   resize: 'none'
                 }}
               />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <ImageUploader images={returnImages} onChange={setReturnImages} label="📷 Ảnh tình trạng đồ chơi khi trả (khuyến khích - bảo vệ bạn nếu có tranh chấp)" />
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

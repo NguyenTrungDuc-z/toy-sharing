@@ -4,6 +4,9 @@ import ReviewModal from './ReviewModal';
 import BorrowActionModal from './BorrowActionModal';
 import ChatModal from './ChatModal';
 import DepositModal from './DepositModal';
+import HandoverModal from './HandoverModal';
+import ReturnInspectionModal from './ReturnInspectionModal';
+import ClaimResponseModal from './ClaimResponseModal';
 
 const getUserId = () => {
   const storedUserId = localStorage.getItem('userId');
@@ -33,6 +36,9 @@ export default function Requests() {
   const [selectedRequestForAction, setSelectedRequestForAction] = useState(null);
   const [chatRequest, setChatRequest] = useState(null);
   const [depositRequest, setDepositRequest] = useState(null);
+  const [handoverItem, setHandoverItem] = useState(null);
+  const [inspectItem, setInspectItem] = useState(null);
+  const [claimItem, setClaimItem] = useState(null);
 
   const userId = getUserId();
 
@@ -143,29 +149,6 @@ export default function Requests() {
      }
    };
 
-   const handleReportDamage = async (item) => {
-     const deposit = item.depositAmount || item.toyId?.depositRequired || 0;
-     const amountStr = window.prompt(`Báo cáo hư hỏng/mất mát để admin trừ cọc.\nSố tiền đền (tối đa ${deposit.toLocaleString()}đ):`, '');
-     if (amountStr === null) return;
-     const amount = Number(amountStr);
-     if (!amount || amount <= 0 || amount > deposit) {
-       showToast(`Số tiền đền phải từ 1 đến ${deposit.toLocaleString()}đ!`, 'error');
-       return;
-     }
-     const note = window.prompt('Mô tả hư hỏng (tuỳ chọn):', '') || '';
-     setActionLoading(true);
-     try {
-       const token = localStorage.getItem('token');
-       await axios.post(`http://localhost:5000/api/deposits/${item._id}/report-damage`, { amount, note }, { headers: { Authorization: `Bearer ${token}` } });
-       showToast('Đã gửi báo cáo hư hỏng tới admin!', 'success');
-       await refreshCurrentTab();
-     } catch (err) {
-       showToast(err.response?.data?.message || err.message, 'error');
-     } finally {
-       setActionLoading(false);
-     }
-   };
-
    const handleRejectRequest = async (requestId) => {
      setActionLoading(true);
      try {
@@ -195,36 +178,7 @@ export default function Requests() {
      }
    };
 
-   const handleConfirmDeposit = async (requestId) => {
-     setActionLoading(true);
-     try {
-       const token = localStorage.getItem('token');
-       await axios.patch(`http://localhost:5000/api/borrows/${requestId}/confirm-deposit`, {}, { headers: { Authorization: `Bearer ${token}` } });
-       showToast('Đã xác nhận nhận cọc! Quá trình mượn bắt đầu.', 'success');
-       await refreshCurrentTab();
-     } catch (err) {
-       showToast(err.response?.data?.message || err.message, 'error');
-     } finally {
-       setActionLoading(false);
-     }
-   };
-
-   const handleConfirmReturn = async (requestId) => {
-     setActionLoading(true);
-     try {
-       const token = localStorage.getItem('token');
-       await axios.patch(`http://localhost:5000/api/borrows/${requestId}/confirm-return`, {}, { headers: { Authorization: `Bearer ${token}` } });
-       showToast('Đã xác nhận trả đồ và hoàn cọc!', 'success');
-       await refreshCurrentTab();
-     } catch (err) {
-       showToast(err.response?.data?.message || err.message, 'error');
-     } finally {
-       setActionLoading(false);
-     }
-   };
-
-  
-  const handleApproveExtension = async (requestId) => {
+   const handleApproveExtension = async (requestId) => {
     setActionLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -359,7 +313,7 @@ export default function Requests() {
                       </div>
                     ) : item.status === 'approved' ? (
                       ((item.toyId?.depositRequired || 0) === 0 || item.depositStatus === 'held' || item.depositStatus === 'paid') ? (
-                        <button onClick={() => handleConfirmDeposit(item._id)} disabled={actionLoading} style={{ padding: '8px 16px', borderRadius: '20px', backgroundColor: '#16a34a', color: 'white', border: 'none', fontWeight: '600', cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
+                        <button onClick={() => setHandoverItem(item)} disabled={actionLoading} style={{ padding: '8px 16px', borderRadius: '20px', backgroundColor: '#16a34a', color: 'white', border: 'none', fontWeight: '600', cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
                           ✓ Xác nhận giao đồ
                         </button>
                       ) : item.depositStatus === 'awaiting_confirmation' ? (
@@ -420,32 +374,31 @@ export default function Requests() {
                           </div>
                         )}
 
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          {(item.toyId?.depositRequired || 0) > 0 && !item.damageReported && (
-                            <button onClick={() => handleReportDamage(item)} disabled={actionLoading} style={{ padding: '8px 14px', borderRadius: '20px', backgroundColor: '#fff', color: '#9d3b35', border: '1px solid #f1c5c0', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
-                              ⚠️ Báo hư hỏng
-                            </button>
-                          )}
-                          {item.damageReported && (
-                            <span style={{ fontSize: '12px', color: '#9d3b35', alignSelf: 'center' }}>Đã báo đền {(item.damageAmountRequested || 0).toLocaleString()}đ</span>
-                          )}
-                          <button onClick={() => handleConfirmReturn(item._id)} disabled={actionLoading} style={{ padding: '8px 18px', borderRadius: '20px', backgroundColor: '#4f46e5', color: 'white', border: 'none', fontWeight: '600', cursor: actionLoading ? 'not-allowed' : 'pointer', boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)' }}>
-                            Xác nhận nhận lại đồ
-                          </button>
-                        </div>
+                        <button onClick={() => setInspectItem(item)} disabled={actionLoading} style={{ padding: '8px 18px', borderRadius: '20px', backgroundColor: '#4f46e5', color: 'white', border: 'none', fontWeight: '600', cursor: actionLoading ? 'not-allowed' : 'pointer', boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)' }}>
+                          🔍 Kiểm tra & nhận lại đồ
+                        </button>
+                      </div>
+                    ) : item.status === 'overdue' ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                        <span style={{ fontSize: '12px', color: '#b45309', backgroundColor: '#fef3c7', padding: '4px 10px', borderRadius: '12px', fontWeight: '600' }}>⚠️ Quá hạn - đồ chưa được trả</span>
+                        <button onClick={() => setInspectItem(item)} disabled={actionLoading} style={{ padding: '8px 18px', borderRadius: '20px', backgroundColor: '#4f46e5', color: 'white', border: 'none', fontWeight: '600', cursor: 'pointer' }}>
+                          🔍 Kiểm tra / Khai mất đồ
+                        </button>
                       </div>
                     ) : item.status === 'returned' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
-                        <span style={{ fontSize: '13px', color: (item.returnStatus === 'overdue_returned' || item.returnNote?.includes('Quá hạn')) ? '#b45309' : '#16a34a', fontWeight: '600' }}>
-                          {(item.returnStatus === 'overdue_returned' || item.returnNote?.includes('Quá hạn')) ? '⚠️ Quá hạn: Tự động hoàn tất' : '✓ Đã nhận lại đồ'}
-                        </span>
-                        {item.depositStatus === 'held' && (item.toyId?.depositRequired || 0) > 0 && !item.damageReported && (
-                          <button onClick={() => handleReportDamage(item)} disabled={actionLoading} style={{ padding: '6px 12px', borderRadius: '16px', backgroundColor: '#fff', color: '#9d3b35', border: '1px solid #f1c5c0', fontWeight: '600', fontSize: '12px', cursor: 'pointer' }}>
-                            ⚠️ Báo hư hỏng (admin trừ cọc)
-                          </button>
+                        <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600' }}>✓ Đã nhận lại đồ</span>
+                        {item.damageClaimStatus === 'claimed' && (
+                          <span style={{ fontSize: '12px', color: '#d97706' }}>⏳ Chờ người mượn phản hồi khiếu nại</span>
                         )}
-                        {item.depositStatus === 'held' && (
+                        {item.damageClaimStatus === 'disputed' && (
+                          <span style={{ fontSize: '12px', color: '#dc2626' }}>⚖️ Đang tranh chấp - chờ admin phân xử</span>
+                        )}
+                        {item.depositStatus === 'held' && item.damageClaimStatus === 'none' && (
                           <span style={{ fontSize: '12px', color: '#d97706' }}>⏳ Admin đang xử lý hoàn cọc</span>
+                        )}
+                        {['refunded', 'partially_refunded'].includes(item.depositStatus) && item.depositDeductAmount > 0 && (
+                          <span style={{ fontSize: '12px', color: '#15803d' }}>✓ Nhận đền {item.depositDeductAmount.toLocaleString()}đ</span>
                         )}
                       </div>
                     ) : (
@@ -521,26 +474,37 @@ export default function Requests() {
                           <span>⚡ Tùy chọn: Trả đồ / Mượn thêm ▾</span>
                         </button>
                       </div>
-                    ) : item.status === 'returned' ? (
-                      reviewedRequestIds.includes(item._id) ? (
-                        <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600' }}>
-                          ★ Đã đánh giá
-                        </span>
+                    ) : (item.status === 'returned' || item.status === 'overdue') ? (
+                      item.damageClaimStatus === 'claimed' ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                          <span style={{ fontSize: '12px', color: '#9d3b35', backgroundColor: '#fef2f2', padding: '4px 10px', borderRadius: '12px', fontWeight: '600' }}>
+                            {item.isLostClaim ? '❌ Chủ khai mất đồ' : '⚠️ Chủ báo hư hỏng'}: {(item.damageAmountRequested || 0).toLocaleString()}đ
+                          </span>
+                          <button onClick={() => setClaimItem(item)} style={{ padding: '8px 16px', borderRadius: '20px', backgroundColor: '#9d3b35', color: 'white', border: 'none', fontWeight: '600', cursor: 'pointer' }}>
+                            Phản hồi khiếu nại
+                          </button>
+                        </div>
+                      ) : item.damageClaimStatus === 'disputed' ? (
+                        <span style={{ fontSize: '12px', color: '#dc2626', fontWeight: '600' }}>⚖️ Đã khiếu nại - chờ admin phân xử</span>
+                      ) : item.damageClaimStatus === 'accepted' ? (
+                        <span style={{ fontSize: '12px', color: '#d97706', fontWeight: '600' }}>⏳ Đã đồng ý - chờ admin trừ cọc</span>
+                      ) : ['refunded', 'partially_refunded'].includes(item.depositStatus) ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                          <span style={{ fontSize: '12px', color: '#15803d', fontWeight: '600' }}>
+                            ✓ Đã hoàn {(item.depositRefundAmount ?? 0).toLocaleString()}đ{item.depositDeductAmount > 0 ? ` (trừ ${item.depositDeductAmount.toLocaleString()}đ)` : ''}
+                          </span>
+                          {item.status === 'returned' && !reviewedRequestIds.includes(item._id) && (
+                            <button onClick={() => setSelectedRequestForReview(item)} style={{ padding: '7px 16px', borderRadius: '20px', backgroundColor: '#f59e0b', color: 'white', border: 'none', fontWeight: '600', cursor: 'pointer' }}>⭐ Đánh giá</button>
+                          )}
+                        </div>
+                      ) : item.status === 'returned' ? (
+                        reviewedRequestIds.includes(item._id) ? (
+                          <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600' }}>★ Đã đánh giá</span>
+                        ) : (
+                          <button onClick={() => setSelectedRequestForReview(item)} style={{ padding: '7px 16px', borderRadius: '20px', backgroundColor: '#f59e0b', color: 'white', border: 'none', fontWeight: '600', cursor: 'pointer' }}>⭐ Đánh giá</button>
+                        )
                       ) : (
-                        <button
-                          onClick={() => setSelectedRequestForReview(item)}
-                          style={{
-                            padding: '7px 16px',
-                            borderRadius: '20px',
-                            backgroundColor: '#f59e0b',
-                            color: 'white',
-                            border: 'none',
-                            fontWeight: '600',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          ⭐ Đánh giá
-                        </button>
+                        <span style={{ fontSize: '12px', color: '#b45309', fontWeight: '600' }}>⚠️ Quá hạn - vui lòng trả đồ</span>
                       )
                     ) : null
                   )}
@@ -577,6 +541,30 @@ export default function Requests() {
           isOpen={!!depositRequest}
           onClose={() => setDepositRequest(null)}
           borrowRequest={depositRequest}
+          showToast={showToast}
+          onSuccess={() => refreshCurrentTab()}
+        />
+
+        <HandoverModal
+          isOpen={!!handoverItem}
+          onClose={() => setHandoverItem(null)}
+          item={handoverItem}
+          showToast={showToast}
+          onSuccess={() => refreshCurrentTab()}
+        />
+
+        <ReturnInspectionModal
+          isOpen={!!inspectItem}
+          onClose={() => setInspectItem(null)}
+          item={inspectItem}
+          showToast={showToast}
+          onSuccess={() => refreshCurrentTab()}
+        />
+
+        <ClaimResponseModal
+          isOpen={!!claimItem}
+          onClose={() => setClaimItem(null)}
+          item={claimItem}
           showToast={showToast}
           onSuccess={() => refreshCurrentTab()}
         />

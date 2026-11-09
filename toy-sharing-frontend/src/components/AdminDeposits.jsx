@@ -64,6 +64,15 @@ export default function AdminDeposits({ setPage }) {
     { key: 'refunded', label: 'Đã hoàn', value: stats.refunded, color: '#15803d' },
   ];
 
+  const PhotoRow = ({ title, images, color }) => (images?.length ? (
+    <div style={{ marginBottom: '10px' }}>
+      <div style={{ fontSize: '12px', fontWeight: 600, color: color || '#7c6e65', marginBottom: '5px' }}>{title}</div>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+        {images.map((img, i) => <a key={i} href={img} target="_blank" rel="noreferrer"><img src={img} alt="" style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #eee' }} /></a>)}
+      </div>
+    </div>
+  ) : null);
+
   return (
     <div style={{ display: 'flex', minHeight: 'calc(100vh - 80px)', background: '#fffbf7', width: '100%' }}>
       <aside style={{ width: '260px', flexShrink: 0, background: '#fff', borderRight: '1px solid #f1eae4', padding: '28px 20px' }}>
@@ -126,13 +135,30 @@ export default function AdminDeposits({ setPage }) {
                   <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '14px', marginBottom: '14px', color: '#5e5148' }}>
                     <span>Tiền cọc: <strong style={{ color: '#a86a2c' }}>{deposit.toLocaleString()}đ</strong></span>
                     <span>Đơn mượn: <strong>{d.status}</strong></span>
-                    {d.damageReported && <span style={{ color: '#dc2626' }}>⚠️ Chủ yêu cầu đền: <strong>{(d.damageAmountRequested || 0).toLocaleString()}đ</strong></span>}
+                    {['claimed', 'accepted', 'disputed'].includes(d.damageClaimStatus) && (
+                      <span style={{ color: '#dc2626' }}>
+                        {d.isLostClaim ? '❌ Khai mất đồ' : '⚠️ Khiếu nại hư hỏng'}: <strong>{(d.damageAmountRequested || 0).toLocaleString()}đ</strong>
+                        {d.damageClaimStatus === 'accepted' && ' (người mượn ĐỒNG Ý)'}
+                        {d.damageClaimStatus === 'disputed' && ' (TRANH CHẤP)'}
+                      </span>
+                    )}
                   </div>
 
-                  {d.damageReported && d.damageNote && (
-                    <p style={{ fontSize: '13px', color: '#7c6e65', marginBottom: '14px', padding: '10px 12px', background: '#fef2f2', borderRadius: '8px' }}>
-                      Lý do: {d.damageNote}
-                    </p>
+                  {/* Bằng chứng các bên */}
+                  {(d.handoverImages?.length || d.returnImages?.length || d.damageImages?.length || d.borrowerDisputeImages?.length) ? (
+                    <div style={{ padding: '12px', background: '#faf7f4', borderRadius: '10px', marginBottom: '12px' }}>
+                      <PhotoRow title="📦 Ảnh lúc chủ GIAO đồ (trước)" images={d.handoverImages} color="#4f46e5" />
+                      <PhotoRow title="🔄 Ảnh người mượn khi TRẢ (sau)" images={d.returnImages} color="#0891b2" />
+                      <PhotoRow title="⚠️ Ảnh hư hỏng (chủ cung cấp)" images={d.damageImages} color="#9d3b35" />
+                      <PhotoRow title="⚖️ Ảnh khiếu nại của người mượn" images={d.borrowerDisputeImages} color="#b45309" />
+                    </div>
+                  ) : null}
+
+                  {d.damageNote && ['claimed', 'accepted', 'disputed'].includes(d.damageClaimStatus) && (
+                    <p style={{ fontSize: '13px', color: '#7c6e65', marginBottom: '8px' }}>Chủ nói: "{d.damageNote}"</p>
+                  )}
+                  {d.borrowerDisputeNote && (
+                    <p style={{ fontSize: '13px', color: '#b45309', marginBottom: '12px' }}>Người mượn phản bác: "{d.borrowerDisputeNote}"</p>
                   )}
 
                   {d.depositResolveNote && ['refunded', 'partially_refunded'].includes(d.depositStatus) && (
@@ -150,28 +176,40 @@ export default function AdminDeposits({ setPage }) {
 
                   {d.depositStatus === 'held' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                      {d.status !== 'returned' && (
-                        <p style={{ fontSize: '13px', color: '#7c6e65', fontStyle: 'italic' }}>Đang giữ cọc. Chờ đồ chơi được trả để hoàn/trừ cọc.</p>
-                      )}
-                      {d.status === 'returned' && (
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                          <button onClick={() => doAction(d._id, 'refund')} disabled={actionId === d._id} style={{ padding: '10px 18px', borderRadius: '10px', background: '#16a34a', color: '#fff', border: 'none', fontWeight: '600', cursor: 'pointer' }}>
+                      {/* Không có khiếu nại: chỉ hoàn 100% khi đã trả */}
+                      {d.damageClaimStatus === 'none' && (
+                        d.status === 'returned' ? (
+                          <button onClick={() => doAction(d._id, 'refund')} disabled={actionId === d._id} style={{ padding: '10px 18px', borderRadius: '10px', background: '#16a34a', color: '#fff', border: 'none', fontWeight: '600', cursor: 'pointer', alignSelf: 'flex-start' }}>
                             Hoàn 100% ({deposit.toLocaleString()}đ)
                           </button>
-                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        ) : (
+                          <p style={{ fontSize: '13px', color: '#7c6e65', fontStyle: 'italic' }}>Đang giữ cọc. Chờ chủ xác nhận nhận lại đồ.</p>
+                        )
+                      )}
+
+                      {/* Có khiếu nại: admin phân xử số tiền trừ (0 .. cọc) */}
+                      {['claimed', 'accepted', 'disputed'].includes(d.damageClaimStatus) && (
+                        <div style={{ padding: '12px', background: d.damageClaimStatus === 'disputed' ? '#fef2f2' : '#fff8f2', borderRadius: '10px' }}>
+                          <p style={{ fontSize: '13px', fontWeight: 600, color: '#5e5148', marginBottom: '10px' }}>
+                            {d.damageClaimStatus === 'claimed' && '⏳ Chờ người mượn phản hồi — bạn vẫn có thể phân xử ngay.'}
+                            {d.damageClaimStatus === 'accepted' && '✓ Người mượn đã đồng ý. Xác nhận số tiền trừ:'}
+                            {d.damageClaimStatus === 'disputed' && '⚖️ TRANH CHẤP — xem bằng chứng 2 bên rồi quyết số tiền trừ (0 nếu bênh người mượn):'}
+                          </p>
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                             <input
                               type="number" min="0" max={deposit} placeholder="Số tiền trừ"
                               value={draft}
                               onChange={e => setDeductDrafts(prev => ({ ...prev, [d._id]: e.target.value }))}
-                              style={{ width: '120px', padding: '9px 12px', borderRadius: '8px', border: '1px solid #e5ddd5' }}
+                              style={{ width: '130px', padding: '9px 12px', borderRadius: '8px', border: '1px solid #e5ddd5' }}
                             />
                             <button
-                              onClick={() => doAction(d._id, 'resolve-damage', { deductAmount: Number(draft) || 0, note: d.damageNote })}
+                              onClick={() => doAction(d._id, 'resolve-damage', { deductAmount: Number(draft) || 0 })}
                               disabled={actionId === d._id}
                               style={{ padding: '10px 16px', borderRadius: '10px', background: '#9d3b35', color: '#fff', border: 'none', fontWeight: '600', cursor: 'pointer' }}
                             >
-                              Trừ & hoàn phần còn lại
+                              Phân xử & hoàn phần còn lại
                             </button>
+                            <span style={{ fontSize: '12px', color: '#7c6e65' }}>Trừ {(Number(draft) || 0).toLocaleString()}đ → hoàn {(deposit - (Number(draft) || 0)).toLocaleString()}đ</span>
                           </div>
                         </div>
                       )}

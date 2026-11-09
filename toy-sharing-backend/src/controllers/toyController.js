@@ -14,6 +14,7 @@ const toySortOptions = {
     'name-desc': { name: -1 },
     'deposit-asc': { depositRequired: 1 },
     'deposit-desc': { depositRequired: -1 },
+    'rating-desc': { 'rating.avg': -1, 'rating.count': -1 },
     createdAt: { createdAt: 1 },
     '-createdAt': { createdAt: -1 },
     name: { name: 1 },
@@ -26,17 +27,48 @@ const toySortOptions = {
 exports.getAllToys = async (req, res) => {
     try {
         await autoReturnOverdueBorrows();
-        const { search, category, location, page: pageValue, limit: limitValue, sort: sortValue } = req.query;
+        const { search, category, location, ageRange, condition, minDeposit, maxDeposit, page: pageValue, limit: limitValue, sort: sortValue } = req.query;
         const filter = {
             status: { $in: ['available', 'borrowed', 'unavailable'] }
         };
 
-        if (category) {
+        if (category && category !== 'all' && category !== 'Khác') {
             filter.category = category;
+        } else if (category === 'Khác') {
+            const defaultCats = ['giáo dục', 'hành động', 'xếp hình', 'công nghệ'];
+            filter.category = { $nin: ['Giáo dục', 'Hành động', 'Xếp hình', 'Công nghệ', 'giáo dục', 'hành động', 'xếp hình', 'công nghệ'] };
         }
-        if (location) {
+
+        if (ageRange && ageRange !== 'all') {
+            filter.ageRange = ageRange;
+        }
+
+        if (condition && condition !== 'all') {
+            if (condition === 'new' || condition.includes('Mới')) {
+                filter.condition = { $in: ['new', 'Mới 100%'] };
+            } else if (condition === 'like_new' || condition.includes('Như mới')) {
+                filter.condition = { $in: ['like_new', 'Như mới (95-99%)'] };
+            } else if (condition === 'used' || condition.includes('Đã')) {
+                filter.condition = { $in: ['used', 'Đã qua sử dụng'] };
+            } else {
+                filter.condition = condition;
+            }
+        }
+
+        if (location && location !== 'all') {
             filter.location = { $regex: location, $options: "i" };
         }
+
+        if ((minDeposit !== undefined && minDeposit !== '') || (maxDeposit !== undefined && maxDeposit !== '')) {
+            filter.depositRequired = {};
+            if (minDeposit !== undefined && minDeposit !== '') {
+                filter.depositRequired.$gte = Number(minDeposit);
+            }
+            if (maxDeposit !== undefined && maxDeposit !== '') {
+                filter.depositRequired.$lte = Number(maxDeposit);
+            }
+        }
+
         if (search) {
             filter.$or = [
                 { name: { $regex: search, $options: "i" } },
@@ -87,6 +119,32 @@ exports.getToyById = async (req, res) => {
         res.json(toy);
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
+    }
+};
+
+// 1c. LẤY ĐỒ CHƠI GỢI Ý TƯƠNG TỰ (Related Toys)
+exports.getRelatedToys = async (req, res) => {
+    try {
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: 'Mã đồ chơi không hợp lệ!' });
+        }
+        const currentToy = await Toy.findById(req.params.id);
+        if (!currentToy) return res.status(404).json({ message: 'Không tìm thấy đồ chơi!' });
+
+        const related = await Toy.find({
+            _id: { $ne: currentToy._id },
+            status: { $in: ['available', 'borrowed'] },
+            $or: [
+                { category: currentToy.category },
+                { ageRange: currentToy.ageRange }
+            ]
+        })
+        .populate('ownerId', 'name email avatar rating')
+        .limit(4);
+
+        res.json({ success: true, related });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi lấy đồ chơi gợi ý', error: err.message });
     }
 };
 

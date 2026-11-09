@@ -138,7 +138,7 @@ export default function App() {
         {page === 'my-toys' && user?.role !== 'admin' && <MyToys user={user} setPage={navigateTo} />}
         {page === 'requests' && user?.role !== 'admin' && <Requests user={user} setPage={navigateTo} />}
         {page === 'favorites' && user?.role !== 'admin' && <Favorites setPage={navigateTo} viewToyDetail={viewToyDetail} />}
-        {page === 'toy-detail' && user?.role !== 'admin' && <ToyDetail toyId={selectedToyId} user={user} setPage={navigateTo} viewOwner={viewOwnerProfile} />}
+        {page === 'toy-detail' && user?.role !== 'admin' && <ToyDetail toyId={selectedToyId} user={user} setPage={navigateTo} viewOwner={viewOwnerProfile} viewToyDetail={viewToyDetail} />}
         {page === 'owner-profile' && user?.role !== 'admin' && <PublicProfile ownerId={selectedOwnerId} setPage={navigateTo} viewToyDetail={viewToyDetail} />}
         {page === 'profile' && user && user.role !== 'admin' && (
           <Profile

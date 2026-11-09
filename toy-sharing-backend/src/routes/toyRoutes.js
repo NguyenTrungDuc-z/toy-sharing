@@ -30,8 +30,9 @@ router.get('/pending', auth, toyController.getPendingToys);
 router.put('/:id/moderate', auth, toyController.moderateToy);
 
 // ==========================================
-// 5. CHI TIẾT ĐỒ CHƠI (Public - đặt cuối để không bắt /my-toys, /pending)
+// 5. CHI TIẾT & GỢI Ý ĐỒ CHƠI (Public)
 // ==========================================
+router.get('/:id/related', toyController.getRelatedToys);
 router.get('/:id', toyController.getToyById);
 
 module.exports = router;

@@ -70,14 +70,15 @@ export default function BorrowRequestModal({ isOpen, onClose, toy, user, onBorro
           <div style={{ flex: '1', minWidth: '300px', maxWidth: '350px' }}>
             <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '16px', border: '1px solid #f1eae4', marginBottom: '20px' }}>
               <div style={{ position: 'relative', marginBottom: '20px' }}>
-                <span style={{ position: 'absolute', top: '12px', left: '12px', backgroundColor: '#f59e0b', color: '#fff', fontSize: '11px', fontWeight: '700', padding: '4px 10px', borderRadius: '12px', zIndex: 1 }}>
-                  Hot item
-                </span>
-                <img 
-                  src={imageUrl || 'https://via.placeholder.com/400x300'} 
-                  alt={toy.name}
-                  style={{ width: '100%', height: '240px', objectFit: 'cover', borderRadius: '16px', backgroundColor: '#f9f5f1' }}
-                />
+                {imageUrl ? (
+                  <img
+                    src={imageUrl}
+                    alt={toy.name}
+                    style={{ width: '100%', height: '240px', objectFit: 'cover', borderRadius: '16px', backgroundColor: '#f9f5f1' }}
+                  />
+                ) : (
+                  <div style={{ width: '100%', height: '240px', borderRadius: '16px', backgroundColor: '#f9f5f1', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>🧸</div>
+                )}
               </div>
               
               <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#2d2520', margin: '0 0 8px 0' }}>{toy.name}</h3>
@@ -89,7 +90,6 @@ export default function BorrowRequestModal({ isOpen, onClose, toy, user, onBorro
                 </div>
                 <div>
                   <div style={{ fontSize: '12px', color: '#a19286' }}>Chủ sở hữu: <span style={{ fontWeight: '700', color: '#2d2520' }}>{ownerName}</span></div>
-                  <div style={{ fontSize: '11px', color: '#a19286', marginTop: '2px' }}>Thành viên từ 2023 - 15+ Đồ chơi</div>
                 </div>
               </div>
 
@@ -98,11 +98,9 @@ export default function BorrowRequestModal({ isOpen, onClose, toy, user, onBorro
                   <span style={{ fontSize: '14px', color: '#7c6e65', fontWeight: '600' }}>Phí cọc bảo trì:</span>
                   <span style={{ fontSize: '18px', color: '#a86a2c', fontWeight: '700' }}>{(toy.depositRequired || 0).toLocaleString()}đ</span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#a19286', fontStyle: 'italic', marginBottom: '12px' }}>(*) Số tiền này sẽ được hoàn trả 100% khi trả đồ chơi nguyên vẹn.</div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button type="button" onClick={() => showToast('Thanh toán cọc online (VNPay/MoMo) sắp ra mắt! Hiện tại cọc được giao trực tiếp cho chủ đồ chơi.', 'info')} title="Sắp ra mắt" style={{ flex: 1, padding: '10px', borderRadius: '12px', border: '1px solid #e2d8cf', background: '#fff', color: '#a19286', fontSize: '12px', fontWeight: '600', cursor: 'not-allowed', opacity: 0.8 }}>
-                    💳 Thanh toán online (sắp ra mắt)
-                  </button>
+                <div style={{ fontSize: '11px', color: '#a19286', fontStyle: 'italic', marginBottom: '8px' }}>(*) Số tiền này sẽ được hoàn trả khi trả đồ chơi nguyên vẹn.</div>
+                <div style={{ fontSize: '11px', color: '#4f46e5', background: '#eef2ff', borderRadius: '10px', padding: '8px 10px' }}>
+                  💳 Sau khi chủ duyệt, bạn sẽ thanh toán cọc bằng mã VietQR ở mục "Yêu cầu mượn".
                 </div>
               </div>
             </div>

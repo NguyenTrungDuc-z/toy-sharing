@@ -26,13 +26,6 @@ export default function ToyModeration({ setPage }) {
         params: { status: statusTab, category: categoryFilter },
         headers: { Authorization: `Bearer ${token}` }
       });
-      
-      // Mảng MockData chuẩn hóa lại cấu trúc trường (name, ownerId, imageUrl) trùng khớp Database
-      const mockData = [
-        { _id: '1', name: 'Bộ xếp hình gỗ', category: 'Giáo dục', ownerId: { name: 'Sarah M.' }, imageUrl: 'https://images.unsplash.com/photo-1587654780291-39c9404d746b?w=400', status: 'pending' },
-        { _id: '2', name: 'Xe đạp cổ điển', category: 'Ngoài trời', ownerId: { name: 'David L.' }, imageUrl: 'https://images.unsplash.com/photo-1531565637446-32307b194362?w=400', status: 'approved' },
-        { _id: '3', name: 'Mô hình Hệ mặt trời 3D', category: 'Khoa học', ownerId: { name: 'Elena K.' }, imageUrl: 'https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?w=400', status: 'borrowed' }
-      ];
 
       if (res.data.success) {
         setToys(res.data.toys || []);
@@ -66,8 +59,7 @@ export default function ToyModeration({ setPage }) {
         fetchToys(); 
       }
     } catch (err) {
-      showToast(`[Demo] Đã chuyển trạng thái bài viết thành: ${action === 'approved' ? 'Phê duyệt' : 'Từ chối'}`, 'success');
-      setToys(toys.filter(item => item._id !== id));
+      showToast(err.response?.data?.message || 'Không thể cập nhật trạng thái bài đăng!', 'error');
     }
   };
 

@@ -151,6 +151,15 @@ export default function AdminDashboard({ setPage }) {
           </button>
 
           <button
+            onClick={() => setPage('admin-deposits')}
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '14px 16px', borderRadius: '14px', border: 'none', backgroundColor: 'transparent', color: '#7c6e65', fontWeight: '550', fontSize: '14px', cursor: 'pointer', textAlign: 'left' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff8f2'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+             Quản lý tiền cọc
+          </button>
+
+          <button
             style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', padding: '14px 16px', borderRadius: '14px', border: 'none', backgroundColor: 'transparent', color: '#7c6e65', fontWeight: '550', fontSize: '14px', cursor: 'pointer', textAlign: 'left' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fff8f2'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}

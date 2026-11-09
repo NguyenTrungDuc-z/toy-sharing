@@ -17,6 +17,7 @@ import Favorites from './components/Favorites';
 import ToyDetail from './components/ToyDetail';
 import PublicProfile from './components/PublicProfile';
 import AdminBorrows from './components/AdminBorrows';
+import AdminDeposits from './components/AdminDeposits';
 import ForgotPassword from './components/ForgotPassword';
 
 export default function App() {
@@ -165,6 +166,10 @@ export default function App() {
 
         {page === 'admin-borrows' && user?.role === 'admin' && (
           <AdminBorrows setPage={navigateTo} />
+        )}
+
+        {page === 'admin-deposits' && user?.role === 'admin' && (
+          <AdminDeposits setPage={navigateTo} />
         )}
         
       </div>

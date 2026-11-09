@@ -41,6 +41,7 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+          <NotificationBell setPage={setPage} />
           <div style={{ textAlign: "right" }}>
             <div
               style={{ fontSize: "14px", fontWeight: "600", color: "#f8fafc" }}

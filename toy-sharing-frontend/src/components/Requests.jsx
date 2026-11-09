@@ -3,6 +3,7 @@ import axios from 'axios';
 import ReviewModal from './ReviewModal';
 import BorrowActionModal from './BorrowActionModal';
 import ChatModal from './ChatModal';
+import DepositModal from './DepositModal';
 
 const getUserId = () => {
   const storedUserId = localStorage.getItem('userId');
@@ -31,6 +32,7 @@ export default function Requests() {
   const [selectedRequestForReview, setSelectedRequestForReview] = useState(null);
   const [selectedRequestForAction, setSelectedRequestForAction] = useState(null);
   const [chatRequest, setChatRequest] = useState(null);
+  const [depositRequest, setDepositRequest] = useState(null);
 
   const userId = getUserId();
 
@@ -133,6 +135,29 @@ export default function Requests() {
        const token = localStorage.getItem('token');
        await axios.put(`http://localhost:5000/api/borrows/${requestId}/approve`, {}, { headers: { Authorization: `Bearer ${token}` } });
        showToast('Đã duyệt yêu cầu mượn!', 'success');
+       await refreshCurrentTab();
+     } catch (err) {
+       showToast(err.response?.data?.message || err.message, 'error');
+     } finally {
+       setActionLoading(false);
+     }
+   };
+
+   const handleReportDamage = async (item) => {
+     const deposit = item.depositAmount || item.toyId?.depositRequired || 0;
+     const amountStr = window.prompt(`Báo cáo hư hỏng/mất mát để admin trừ cọc.\nSố tiền đền (tối đa ${deposit.toLocaleString()}đ):`, '');
+     if (amountStr === null) return;
+     const amount = Number(amountStr);
+     if (!amount || amount <= 0 || amount > deposit) {
+       showToast(`Số tiền đền phải từ 1 đến ${deposit.toLocaleString()}đ!`, 'error');
+       return;
+     }
+     const note = window.prompt('Mô tả hư hỏng (tuỳ chọn):', '') || '';
+     setActionLoading(true);
+     try {
+       const token = localStorage.getItem('token');
+       await axios.post(`http://localhost:5000/api/deposits/${item._id}/report-damage`, { amount, note }, { headers: { Authorization: `Bearer ${token}` } });
+       showToast('Đã gửi báo cáo hư hỏng tới admin!', 'success');
        await refreshCurrentTab();
      } catch (err) {
        showToast(err.response?.data?.message || err.message, 'error');
@@ -333,9 +358,19 @@ export default function Requests() {
                         </button>
                       </div>
                     ) : item.status === 'approved' ? (
-                      <button onClick={() => handleConfirmDeposit(item._id)} disabled={actionLoading} style={{ padding: '8px 16px', borderRadius: '20px', backgroundColor: '#f59e0b', color: 'white', border: 'none', fontWeight: '600', cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
-                        Xác nhận cọc
-                      </button>
+                      ((item.toyId?.depositRequired || 0) === 0 || item.depositStatus === 'held' || item.depositStatus === 'paid') ? (
+                        <button onClick={() => handleConfirmDeposit(item._id)} disabled={actionLoading} style={{ padding: '8px 16px', borderRadius: '20px', backgroundColor: '#16a34a', color: 'white', border: 'none', fontWeight: '600', cursor: actionLoading ? 'not-allowed' : 'pointer' }}>
+                          ✓ Xác nhận giao đồ
+                        </button>
+                      ) : item.depositStatus === 'awaiting_confirmation' ? (
+                        <span style={{ fontSize: '13px', color: '#d97706', fontWeight: '600', backgroundColor: '#fef3c7', padding: '8px 14px', borderRadius: '16px' }}>
+                          ⏳ Chờ admin xác nhận cọc
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '13px', color: '#6b7280', fontWeight: '600', backgroundColor: '#f3f4f6', padding: '8px 14px', borderRadius: '16px' }}>
+                          💰 Chờ người mượn đóng cọc
+                        </span>
+                      )
                     ) : item.status === 'borrowing' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end', width: '100%' }}>
                         {item.returnStatus === 'reported_early' && (
@@ -385,14 +420,34 @@ export default function Requests() {
                           </div>
                         )}
 
-                        <button onClick={() => handleConfirmReturn(item._id)} disabled={actionLoading} style={{ padding: '8px 18px', borderRadius: '20px', backgroundColor: '#4f46e5', color: 'white', border: 'none', fontWeight: '600', cursor: actionLoading ? 'not-allowed' : 'pointer', boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)' }}>
-                          Xác nhận nhận lại đồ & Hoàn cọc
-                        </button>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          {(item.toyId?.depositRequired || 0) > 0 && !item.damageReported && (
+                            <button onClick={() => handleReportDamage(item)} disabled={actionLoading} style={{ padding: '8px 14px', borderRadius: '20px', backgroundColor: '#fff', color: '#9d3b35', border: '1px solid #f1c5c0', fontWeight: '600', fontSize: '13px', cursor: 'pointer' }}>
+                              ⚠️ Báo hư hỏng
+                            </button>
+                          )}
+                          {item.damageReported && (
+                            <span style={{ fontSize: '12px', color: '#9d3b35', alignSelf: 'center' }}>Đã báo đền {(item.damageAmountRequested || 0).toLocaleString()}đ</span>
+                          )}
+                          <button onClick={() => handleConfirmReturn(item._id)} disabled={actionLoading} style={{ padding: '8px 18px', borderRadius: '20px', backgroundColor: '#4f46e5', color: 'white', border: 'none', fontWeight: '600', cursor: actionLoading ? 'not-allowed' : 'pointer', boxShadow: '0 2px 6px rgba(79, 70, 229, 0.25)' }}>
+                            Xác nhận nhận lại đồ
+                          </button>
+                        </div>
                       </div>
                     ) : item.status === 'returned' ? (
-                      <span style={{ fontSize: '13px', color: (item.returnStatus === 'overdue_returned' || item.returnNote?.includes('Quá hạn')) ? '#b45309' : '#16a34a', fontWeight: '600' }}>
-                        {(item.returnStatus === 'overdue_returned' || item.returnNote?.includes('Quá hạn')) ? '⚠️ Quá hạn: Tự động hoàn tất' : '✓ Đã nhận lại đồ'}
-                      </span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+                        <span style={{ fontSize: '13px', color: (item.returnStatus === 'overdue_returned' || item.returnNote?.includes('Quá hạn')) ? '#b45309' : '#16a34a', fontWeight: '600' }}>
+                          {(item.returnStatus === 'overdue_returned' || item.returnNote?.includes('Quá hạn')) ? '⚠️ Quá hạn: Tự động hoàn tất' : '✓ Đã nhận lại đồ'}
+                        </span>
+                        {item.depositStatus === 'held' && (item.toyId?.depositRequired || 0) > 0 && !item.damageReported && (
+                          <button onClick={() => handleReportDamage(item)} disabled={actionLoading} style={{ padding: '6px 12px', borderRadius: '16px', backgroundColor: '#fff', color: '#9d3b35', border: '1px solid #f1c5c0', fontWeight: '600', fontSize: '12px', cursor: 'pointer' }}>
+                            ⚠️ Báo hư hỏng (admin trừ cọc)
+                          </button>
+                        )}
+                        {item.depositStatus === 'held' && (
+                          <span style={{ fontSize: '12px', color: '#d97706' }}>⏳ Admin đang xử lý hoàn cọc</span>
+                        )}
+                      </div>
                     ) : (
                       <span />
                     )
@@ -402,6 +457,24 @@ export default function Requests() {
                       <button onClick={() => handleCancelRequest(item._id)} style={{ padding: '8px 16px', borderRadius: '20px', backgroundColor: '#6b7280', color: 'white', border: 'none', fontWeight: '600' }}>
                         Huỷ yêu cầu
                       </button>
+                    ) : item.status === 'approved' ? (
+                      (item.toyId?.depositRequired || 0) === 0 ? (
+                        <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', backgroundColor: '#dcfce7', padding: '8px 14px', borderRadius: '16px' }}>
+                          ✓ Miễn cọc - Chờ chủ giao đồ
+                        </span>
+                      ) : item.depositStatus === 'awaiting_confirmation' ? (
+                        <span style={{ fontSize: '13px', color: '#d97706', fontWeight: '600', backgroundColor: '#fef3c7', padding: '8px 14px', borderRadius: '16px' }}>
+                          ⏳ Chờ admin xác nhận cọc
+                        </span>
+                      ) : item.depositStatus === 'held' ? (
+                        <span style={{ fontSize: '13px', color: '#16a34a', fontWeight: '600', backgroundColor: '#dcfce7', padding: '8px 14px', borderRadius: '16px' }}>
+                          ✓ Đã đóng cọc - Chờ chủ giao đồ
+                        </span>
+                      ) : (
+                        <button onClick={() => setDepositRequest(item)} style={{ padding: '8px 16px', borderRadius: '20px', backgroundColor: '#16a34a', color: 'white', border: 'none', fontWeight: '600', cursor: 'pointer' }}>
+                          💳 Thanh toán cọc
+                        </button>
+                      )
                     ) : item.status === 'borrowing' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
                         <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -498,6 +571,14 @@ export default function Requests() {
           onSuccess={() => {
             refreshCurrentTab();
           }}
+        />
+
+        <DepositModal
+          isOpen={!!depositRequest}
+          onClose={() => setDepositRequest(null)}
+          borrowRequest={depositRequest}
+          showToast={showToast}
+          onSuccess={() => refreshCurrentTab()}
         />
 
         <ChatModal

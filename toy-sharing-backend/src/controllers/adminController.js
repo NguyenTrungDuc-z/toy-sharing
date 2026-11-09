@@ -13,12 +13,15 @@ exports.getStats = async (req, res) => {
         const activeLoans = await BorrowRequest.countDocuments({ status: 'borrowing' });
         const pendingApprovals = await BorrowRequest.countDocuments({ status: 'pending' });
 
-        const dynamicChartData = [
-            Math.max(5, Math.round(totalToys * 0.2)),
-            Math.max(15, Math.round(totalToys * 0.5)),
-            Math.max(30, Math.round(totalToys * 0.7)),
-            totalToys
-        ];
+        const now = new Date();
+        const chartData = [];
+        for (let i = 3; i >= 0; i--) {
+            const cutoff = new Date(now);
+            cutoff.setDate(cutoff.getDate() - i * 7);
+            const count = await Toy.countDocuments({ createdAt: { $lte: cutoff } });
+            chartData.push(count);
+        }
+        const dynamicChartData = chartData;
 
         res.status(200).json({
             success: true,
@@ -235,10 +238,27 @@ exports.updateToyStatus = async (req, res) => {
 // 7. API GỠ BỎ BÀI ĐĂNG ĐỒ CHƠI VI PHẠM (/api/admin/toys/:id)
 exports.deleteToy = async (req, res) => {
     try {
-        const deletedToy = await Toy.findByIdAndDelete(req.params.id);
-        if (!deletedToy) {
+        const toy = await Toy.findById(req.params.id);
+        if (!toy) {
             return res.status(404).json({ message: "Không tìm thấy đồ chơi yêu cầu gỡ bỏ." });
         }
+
+        const activeBorrow = await BorrowRequest.findOne({
+            toyId: toy._id,
+            status: { $in: ['pending', 'approved', 'borrowing'] }
+        });
+        if (activeBorrow) {
+            return res.status(400).json({ message: "Không thể xóa đồ chơi đang trong quá trình mượn/trả!" });
+        }
+
+        const Review = require('../models/Review');
+        await Promise.all([
+            BorrowRequest.deleteMany({ toyId: toy._id }),
+            Review.deleteMany({ toyId: toy._id }),
+            Report.deleteMany({ toyId: toy._id }),
+            User.updateMany({}, { $pull: { favorites: toy._id } }),
+        ]);
+        await Toy.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: "Admin đã gỡ bỏ bài đăng đồ chơi vi phạm thành công!" });
     } catch (err) {
         res.status(500).json({ message: "Lỗi hệ thống khi xóa bài đăng đồ chơi", error: err.message });

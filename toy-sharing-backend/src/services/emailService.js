@@ -65,39 +65,35 @@ async function sendResetPasswordEmail({ to, token, resetUrl, userName }) {
             .logo { font-size: 24px; font-weight: 800; color: #ff6b35; margin-bottom: 24px; display: inline-block; }
             .header-title { font-size: 20px; font-weight: 700; color: #1f1a17; margin-bottom: 12px; }
             .content { font-size: 15px; line-height: 1.6; color: #52473f; margin-bottom: 24px; }
-            .token-box { background: #fff8f3; border: 2px dashed #ff9a6c; border-radius: 12px; padding: 18px; text-align: center; margin: 24px 0; }
-            .token-label { font-size: 13px; color: #7a6a5f; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 6px; }
-            .token-value { font-family: monospace; font-size: 20px; font-weight: 700; color: #d94b15; letter-spacing: 1px; word-break: break-all; }
-            .btn-action { display: inline-block; background-color: #ff6b35; color: #ffffff !important; text-decoration: none; padding: 14px 28px; border-radius: 10px; font-weight: 600; font-size: 15px; margin: 12px 0 20px 0; }
+            .btn-action { display: inline-block; background-color: #ff6b35; color: #ffffff !important; text-decoration: none; padding: 16px 36px; border-radius: 12px; font-weight: 700; font-size: 16px; margin: 16px 0; box-shadow: 0 4px 14px rgba(255,107,53,0.35); }
             .footer { font-size: 13px; color: #9c8e84; border-top: 1px solid #f0e6de; padding-top: 20px; margin-top: 28px; line-height: 1.5; }
-            .warning { background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 14px; font-size: 13px; color: #991b1b; border-radius: 4px; margin-top: 16px; }
+            .warning { background: #fef2f2; border-left: 4px solid #ef4444; padding: 12px 14px; font-size: 13px; color: #991b1b; border-radius: 4px; margin: 16px 0; }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="logo">🧸 ToyShare</div>
-            <div class="header-title">Yêu cầu đặt lại mật khẩu</div>
+            <div class="header-title">Đặt lại mật khẩu tài khoản</div>
             <p class="content">
-                Xin chào ${userName || 'bạn'},<br/>
-                Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>${to}</strong> trên nền tảng chia sẻ đồ chơi ToyShare.
+                Xin chào <strong>${userName || 'bạn'}</strong>,<br/><br/>
+                Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>${to}</strong> trên nền tảng ToyShare.<br/>
+                Để tạo mật khẩu mới, bạn chỉ cần bấm vào nút bên dưới:
             </p>
             
-            <div class="token-box">
-                <div class="token-label">Mã xác nhận (Token) của bạn:</div>
-                <div class="token-value">${token}</div>
+            <div style="text-align: center; margin: 24px 0;">
+                <a href="${resetUrl}" class="btn-action" target="_blank">👉 Đặt lại mật khẩu ngay</a>
             </div>
-
-            ${resetUrl ? `
-            <div style="text-align: center;">
-                <a href="${resetUrl}" class="btn-action" target="_blank">Nhấp vào đây để Đặt lại mật khẩu</a>
-            </div>
-            ` : ''}
 
             <div class="warning">
-                ⏱️ Mã xác nhận này có hiệu lực trong vòng <strong>15 phút</strong>.
+                ⏱️ Liên kết này chỉ có hiệu lực trong vòng <strong>15 phút</strong>.
             </div>
 
-            <p class="content" style="margin-top: 20px; font-size: 14px;">
+            <p style="font-size: 13px; color: #7a6a5f; margin-top: 20px; line-height: 1.6;">
+                Nếu không bấm được nút trên, bạn có thể sao chép liên kết này vào trình duyệt:<br/>
+                <a href="${resetUrl}" style="color: #ff6b35; word-break: break-all;">${resetUrl}</a>
+            </p>
+
+            <p class="content" style="margin-top: 20px; font-size: 13px; color: #9c8e84;">
                 Nếu bạn không gửi yêu cầu này, bạn có thể an tâm bỏ qua email. Mật khẩu hiện tại của bạn vẫn được bảo đảm an toàn.
             </p>
 
@@ -111,17 +107,16 @@ async function sendResetPasswordEmail({ to, token, resetUrl, userName }) {
     `;
 
     const textContent = `
-[ToyShare] Yêu cầu đặt lại mật khẩu
+[ToyShare] Đặt lại mật khẩu tài khoản
 
-Xin chào ${userName || ''},
+Xin chào ${userName || 'bạn'},
 Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản: ${to}
 
-Mã xác nhận (token) của bạn là:
-${token}
+Để tạo mật khẩu mới, bạn chỉ cần nhấp vào liên kết sau:
+${resetUrl}
 
-${resetUrl ? `Link đặt lại mật khẩu: ${resetUrl}\n` : ''}
-Mã xác nhận này sẽ hết hạn sau 15 phút.
-Nếu bạn không gửi yêu cầu này, vui lòng bỏ qua email.
+Liên kết này chỉ có hiệu lực trong vòng 15 phút.
+Nếu bạn không yêu cầu, vui lòng bỏ qua email này.
 
 Đội ngũ ToyShare Vietnam
     `.trim();

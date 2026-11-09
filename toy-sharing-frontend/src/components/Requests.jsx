@@ -23,8 +23,9 @@ const getUserId = () => {
   }
 };
 
-export default function Requests() {
-  const [activeTab, setActiveTab] = useState('incoming');
+export default function Requests({ user, setPage, initialTab = 'borrowing' }) {
+  const [activeTab, setActiveTab] = useState(initialTab || 'borrowing');
+  const [borrowFilter, setBorrowFilter] = useState('all');
   const [incomingRequests, setIncomingRequests] = useState([]);
   const [myBorrows, setMyBorrows] = useState([]);
   const [userHistory, setUserHistory] = useState([]);
@@ -76,6 +77,12 @@ export default function Requests() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   useEffect(() => {
     fetchData();
@@ -206,34 +213,262 @@ export default function Requests() {
     }
   };
 
-  const requests = activeTab === 'incoming' ? incomingRequests : activeTab === 'borrowing' ? myBorrows : userHistory;
+  const pendingBorrowsCount = myBorrows.filter(item => item.status === 'pending').length;
+  const pendingIncomingCount = incomingRequests.filter(item => item.status === 'pending').length;
+
+  let displayedRequests = [];
+  if (activeTab === 'borrowing') {
+    if (borrowFilter === 'all') displayedRequests = myBorrows;
+    else displayedRequests = myBorrows.filter(item => item.status === borrowFilter);
+  } else if (activeTab === 'incoming') {
+    displayedRequests = incomingRequests;
+  } else {
+    displayedRequests = userHistory;
+  }
 
   return (
     <div style={{ backgroundColor: '#fffbf7', minHeight: '100vh', paddingBottom: '60px' }}>
       <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '40px 20px' }}>
-        <h1 style={{ fontSize: '48px', fontWeight: '700', color: '#2d2520', margin: '0 0 24px 0' }}>
+        <h1 style={{ fontSize: '38px', fontWeight: '800', color: '#2d2520', margin: '0 0 8px 0', letterSpacing: '-0.5px' }}>
           Quản lý yêu cầu
         </h1>
+        <p style={{ color: '#7c6e65', fontSize: '15px', margin: '0 0 28px 0' }}>
+          Theo dõi tiến trình mượn đồ chơi của bạn và xử lý các yêu cầu mượn từ phụ huynh khác.
+        </p>
 
-        <div style={{ display: 'flex', gap: '32px', borderBottom: '2px solid #f3ebd9', marginBottom: '35px' }}>
-          <button onClick={() => setActiveTab('incoming')} style={{ padding: '12px 4px', fontSize: '16px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', color: activeTab === 'incoming' ? '#85581A' : '#a19286', borderBottom: activeTab === 'incoming' ? '3px solid #85581A' : '3px solid transparent', marginBottom: '-2px' }}>
-            Yêu cầu gửi tới tôi
+        {/* TABS ĐIỀU HƯỚNG RÕ RÀNG, ĐẦY ĐỦ SỐ LƯỢNG */}
+        <div style={{ display: 'flex', gap: '12px', borderBottom: '2px solid #f3ebd9', marginBottom: '24px', flexWrap: 'wrap' }}>
+          {/* TAB 1: ĐƠN TÔI ĐI MƯỢN */}
+          <button
+            onClick={() => { setActiveTab('borrowing'); setBorrowFilter('all'); }}
+            style={{
+              padding: '12px 20px',
+              fontSize: '15px',
+              fontWeight: '700',
+              background: activeTab === 'borrowing' ? '#fff7ed' : 'none',
+              border: 'none',
+              borderRadius: '14px 14px 0 0',
+              cursor: 'pointer',
+              color: activeTab === 'borrowing' ? '#ea580c' : '#78716c',
+              borderBottom: activeTab === 'borrowing' ? '3px solid #ea580c' : '3px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>🛍️ Đơn tôi đi mượn</span>
+            <span style={{
+              backgroundColor: activeTab === 'borrowing' ? '#ea580c' : '#e7e5e4',
+              color: activeTab === 'borrowing' ? '#ffffff' : '#57534e',
+              padding: '2px 8px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: '700'
+            }}>
+              {myBorrows.length}
+            </span>
+            {pendingBorrowsCount > 0 && (
+              <span style={{
+                backgroundColor: '#fef3c7',
+                color: '#b45309',
+                padding: '2px 7px',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: '700',
+                border: '1px solid #fde68a'
+              }}>
+                {pendingBorrowsCount} chờ duyệt
+              </span>
+            )}
           </button>
-          <button onClick={() => setActiveTab('borrowing')} style={{ padding: '12px 4px', fontSize: '16px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', color: activeTab === 'borrowing' ? '#85581A' : '#a19286', borderBottom: activeTab === 'borrowing' ? '3px solid #85581A' : '3px solid transparent', marginBottom: '-2px' }}>
-            Đồ đang mượn
+
+          {/* TAB 2: YÊU CẦU GỬI TỚI TÔI (CHỦ ĐỒ) */}
+          <button
+            onClick={() => setActiveTab('incoming')}
+            style={{
+              padding: '12px 20px',
+              fontSize: '15px',
+              fontWeight: '700',
+              background: activeTab === 'incoming' ? '#fff7ed' : 'none',
+              border: 'none',
+              borderRadius: '14px 14px 0 0',
+              cursor: 'pointer',
+              color: activeTab === 'incoming' ? '#ea580c' : '#78716c',
+              borderBottom: activeTab === 'incoming' ? '3px solid #ea580c' : '3px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>📬 Yêu cầu gửi tới tôi</span>
+            <span style={{
+              backgroundColor: pendingIncomingCount > 0 ? '#f59e0b' : (activeTab === 'incoming' ? '#ea580c' : '#e7e5e4'),
+              color: pendingIncomingCount > 0 ? '#ffffff' : (activeTab === 'incoming' ? '#ffffff' : '#57534e'),
+              padding: '2px 8px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: '700'
+            }}>
+              {incomingRequests.length}
+            </span>
+            {pendingIncomingCount > 0 && (
+              <span style={{
+                backgroundColor: '#dc2626',
+                color: '#ffffff',
+                padding: '2px 7px',
+                borderRadius: '8px',
+                fontSize: '11px',
+                fontWeight: '700'
+              }}>
+                {pendingIncomingCount} cần duyệt!
+              </span>
+            )}
           </button>
-          <button onClick={() => setActiveTab('history')} style={{ padding: '12px 4px', fontSize: '16px', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer', color: activeTab === 'history' ? '#85581A' : '#a19286', borderBottom: activeTab === 'history' ? '3px solid #85581A' : '3px solid transparent', marginBottom: '-2px' }}>
-            Lịch sử thuê
+
+          {/* TAB 3: LỊCH SỬ THUÊ / TRẢ */}
+          <button
+            onClick={() => setActiveTab('history')}
+            style={{
+              padding: '12px 20px',
+              fontSize: '15px',
+              fontWeight: '700',
+              background: activeTab === 'history' ? '#fff7ed' : 'none',
+              border: 'none',
+              borderRadius: '14px 14px 0 0',
+              cursor: 'pointer',
+              color: activeTab === 'history' ? '#ea580c' : '#78716c',
+              borderBottom: activeTab === 'history' ? '3px solid #ea580c' : '3px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <span>📜 Lịch sử giao dịch</span>
+            <span style={{
+              backgroundColor: activeTab === 'history' ? '#ea580c' : '#e7e5e4',
+              color: activeTab === 'history' ? '#ffffff' : '#57534e',
+              padding: '2px 8px',
+              borderRadius: '10px',
+              fontSize: '12px',
+              fontWeight: '700'
+            }}>
+              {userHistory.length}
+            </span>
           </button>
         </div>
 
+        {/* SUB-FILTER CHIPS NẾU ĐANG Ở TAB "ĐƠN TÔI ĐI MƯỢN" */}
+        {activeTab === 'borrowing' && myBorrows.length > 0 && (
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '13px', color: '#78716c', fontWeight: '600', marginRight: '4px' }}>Lọc nhanh:</span>
+            {[
+              { key: 'all', label: 'Tất cả', count: myBorrows.length },
+              { key: 'pending', label: '⏳ Chờ duyệt', count: myBorrows.filter(b => b.status === 'pending').length },
+              { key: 'approved', label: '✓ Đã duyệt / Cọc', count: myBorrows.filter(b => b.status === 'approved').length },
+              { key: 'borrowing', label: '📦 Đang mượn', count: myBorrows.filter(b => b.status === 'borrowing').length },
+            ].map(chip => (
+              <button
+                key={chip.key}
+                onClick={() => setBorrowFilter(chip.key)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '16px',
+                  border: borrowFilter === chip.key ? '1px solid #ea580c' : '1px solid #e7e5e4',
+                  backgroundColor: borrowFilter === chip.key ? '#ffedd5' : '#ffffff',
+                  color: borrowFilter === chip.key ? '#c2410c' : '#57534e',
+                  fontSize: '13px',
+                  fontWeight: borrowFilter === chip.key ? '700' : '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>{chip.label}</span>
+                <span style={{ fontSize: '11px', opacity: 0.85 }}>({chip.count})</span>
+              </button>
+            ))}
+          </div>
+        )}
+
         {loading ? (
-          <p style={{ color: '#7c6e65' }}>Đang tải danh sách yêu cầu...</p>
-        ) : requests.length === 0 ? (
-          <p style={{ color: '#a19286', fontStyle: 'italic' }}>Không có yêu cầu nào trong danh mục này.</p>
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: '#7c6e65' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>⏳</div>
+            <p style={{ margin: 0, fontWeight: '600' }}>Đang tải danh sách yêu cầu...</p>
+          </div>
+        ) : displayedRequests.length === 0 ? (
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '24px',
+            padding: '50px 24px',
+            textAlign: 'center',
+            border: '1px dashed #e7e5e4',
+            maxWidth: '560px',
+            margin: '30px auto'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '14px' }}>
+              {activeTab === 'borrowing' ? '🧸' : activeTab === 'incoming' ? '📬' : '📜'}
+            </div>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#292524', margin: '0 0 8px 0' }}>
+              {activeTab === 'borrowing'
+                ? (borrowFilter === 'all' ? 'Bạn chưa có đơn mượn đồ chơi nào' : 'Không có đơn mượn nào ở trạng thái này')
+                : activeTab === 'incoming'
+                ? 'Chưa có yêu cầu gửi tới bạn'
+                : 'Chưa có lịch sử giao dịch nào'}
+            </h3>
+            <p style={{ fontSize: '14px', color: '#78716c', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+              {activeTab === 'borrowing'
+                ? (borrowFilter === 'all'
+                  ? 'Hãy dạo quanh kho đồ chơi phong phú của ToyShare và gửi yêu cầu mượn những món đồ hấp dẫn cho bé nhé!'
+                  : 'Hãy chuyển bộ lọc về "Tất cả" để kiểm tra toàn bộ các đơn mượn của bạn.')
+                : activeTab === 'incoming'
+                ? 'Khi có phụ huynh khác muốn mượn đồ chơi bạn chia sẻ, yêu cầu sẽ xuất hiện tại đây để bạn phê duyệt.'
+                : 'Các đơn mượn đã hoàn tất, trả đồ hoặc huỷ sẽ được lưu trữ tự động tại đây.'}
+            </p>
+            {activeTab === 'borrowing' && borrowFilter === 'all' && setPage && (
+              <button
+                onClick={() => setPage('home')}
+                style={{
+                  padding: '10px 24px',
+                  backgroundColor: '#ea580c',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)'
+                }}
+              >
+                🔍 Khám phá đồ chơi ngay
+              </button>
+            )}
+            {activeTab === 'incoming' && setPage && (
+              <button
+                onClick={() => setPage('my-toys')}
+                style={{
+                  padding: '10px 24px',
+                  backgroundColor: '#ea580c',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '20px',
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(234, 88, 12, 0.25)'
+                }}
+              >
+                📦 Quản lý đồ chơi của tôi
+              </button>
+            )}
+          </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '24px' }}>
-            {requests.map((item) => (
+            {displayedRequests.map((item) => (
               <div key={item._id} style={{ background: '#fff', borderRadius: '28px', padding: '24px', border: '1px solid rgba(234, 221, 211, 0.5)' }}>
                 <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                   <img
@@ -251,6 +486,45 @@ export default function Requests() {
                         : `Vai trò: ${item.ownerId?._id === userId ? 'Người cho thuê' : 'Người thuê'}`}
                     </p>
                     {renderStatusBadge(item.status, item.returnStatus, item)}
+
+                    {activeTab === 'borrowing' && item.status === 'pending' && (
+                      <div style={{
+                        marginTop: '10px',
+                        backgroundColor: '#fffbeb',
+                        border: '1px solid #fde68a',
+                        borderRadius: '12px',
+                        padding: '8px 12px',
+                        fontSize: '12px',
+                        color: '#92400e',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        lineHeight: 1.4
+                      }}>
+                        <span>⏳</span>
+                        <span>Đang chờ chủ đồ chơi (<strong>{item.toyId?.ownerId?.name || 'Chủ đồ'}</strong>) duyệt yêu cầu. Bạn sẽ nhận được thông báo ngay khi chủ đồ phản hồi!</span>
+                      </div>
+                    )}
+
+                    {activeTab === 'incoming' && item.status === 'pending' && (
+                      <div style={{
+                        marginTop: '10px',
+                        backgroundColor: '#eff6ff',
+                        border: '1px solid #bfdbfe',
+                        borderRadius: '12px',
+                        padding: '8px 12px',
+                        fontSize: '12px',
+                        color: '#1e40af',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        lineHeight: 1.4
+                      }}>
+                        <span>🔔</span>
+                        <span>Khách muốn mượn món này. Hãy bấm <strong>Xác nhận</strong> để đồng ý hoặc <strong>Từ chối</strong>!</span>
+                      </div>
+                    )}
+
                     {(item.returnStatus === 'overdue_returned' || (item.status === 'returned' && item.returnNote?.includes('Quá hạn'))) && (
                       <div style={{ marginTop: '8px', backgroundColor: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '6px 10px', fontSize: '11px', color: '#92400e' }}>
                         ⚠️ Quá hạn mượn bắt buộc trả: Đã tự động chuyển thành <strong>Đã trả</strong>.

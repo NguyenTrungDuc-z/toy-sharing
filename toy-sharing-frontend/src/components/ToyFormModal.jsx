@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, InputNumber, Select, Radio, Upload, Alert, App } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { VIETNAM_REGIONS } from '../constants/vietnamLocations';
+import { TOY_CONDITIONS } from '../constants/toyConditions';
 
 const DEFAULT_CATEGORIES = ['Giáo dục', 'Hành động', 'Xếp hình', 'Công nghệ'];
 
@@ -101,9 +102,16 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
           <Select placeholder="Chọn độ tuổi" options={['0-3 tuổi', '3-6 tuổi', '6-12 tuổi', '12+ tuổi'].map(a => ({ value: a, label: a }))} />
         </Form.Item>
 
-        <Form.Item name="condition" label="Tình trạng" rules={[{ required: true }]}>
+        <Form.Item name="condition" label="Tình trạng" rules={[{ required: true }]}
+          extra={<span style={{ fontSize: 12 }}>Chọn đúng tiêu chí — ảnh lúc bàn giao sẽ là bằng chứng đối chiếu khi trả đồ.</span>}>
           <Radio.Group optionType="button" buttonStyle="solid"
-            options={[{ value: 'new', label: 'Mới' }, { value: 'like_new', label: 'Như mới' }, { value: 'used', label: 'Đã dùng' }]} />
+            options={TOY_CONDITIONS.map(c => ({ value: c.value, label: c.label }))} />
+        </Form.Item>
+        <Form.Item noStyle shouldUpdate={(a, b) => a.condition !== b.condition}>
+          {({ getFieldValue }) => {
+            const c = TOY_CONDITIONS.find(x => x.value === getFieldValue('condition'));
+            return c ? <Alert type="info" showIcon style={{ marginTop: -8, marginBottom: 16 }} message={<span><strong>{c.label}:</strong> {c.rubric}</span>} /> : null;
+          }}
         </Form.Item>
 
         <Form.Item name="depositRequired" label="Tiền cọc (đồng)">

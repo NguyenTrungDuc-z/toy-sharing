@@ -3,12 +3,13 @@ import axios from 'axios';
 import { App, Row, Col, Card, Segmented, Select, Button, Tag, Statistic, Modal, Descriptions, Empty, Spin, Flex, Typography } from 'antd';
 import { GiftOutlined } from '@ant-design/icons';
 import AdminLayout from './AdminLayout';
+import { CONDITION_LABEL } from '../constants/toyConditions';
 
 const { Text } = Typography;
 
 const tabLabel = { pending: 'Chờ duyệt', approved: 'Sẵn sàng', borrowed: 'Đang cho mượn', rejected: 'Bị từ chối' };
 const tabColor = { pending: 'gold', approved: 'green', borrowed: 'blue', rejected: 'red' };
-const condLabel = { new: 'Mới', like_new: 'Như mới', used: 'Đã dùng' };
+const condLabel = CONDITION_LABEL;
 
 export default function ToyModeration({ setPage }) {
   const { message } = App.useApp();

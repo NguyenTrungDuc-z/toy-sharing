@@ -30,7 +30,7 @@ export default function VoucherManagement({ setPage }) {
   const openCreate = () => {
     setEditing(null);
     form.resetFields();
-    form.setFieldsValue({ discountType: 'percent', active: true, discountValue: 10, maxDiscount: 0, minDeposit: 0, usageLimit: 0 });
+    form.setFieldsValue({ discountType: 'percent', active: true, discountValue: 10, maxDiscount: 0, minDeposit: 0, usageLimit: 0, usagePerUser: 1 });
     setModalOpen(true);
   };
   const openEdit = (v) => {
@@ -127,8 +127,11 @@ export default function VoucherManagement({ setPage }) {
             </Form.Item>
           </Space>
           <Space style={{ display: 'flex' }} align="start">
-            <Form.Item name="usageLimit" label="Giới hạn lượt dùng (0 = không giới hạn)">
-              <InputNumber min={0} style={{ width: 200 }} />
+            <Form.Item name="usageLimit" label="Tổng lượt dùng (0 = ∞)">
+              <InputNumber min={0} style={{ width: 150 }} />
+            </Form.Item>
+            <Form.Item name="usagePerUser" label="Lượt/người (0 = ∞)">
+              <InputNumber min={0} style={{ width: 150 }} />
             </Form.Item>
             <Form.Item name="expiresAt" label="Ngày hết hạn">
               <DatePicker format="DD/MM/YYYY" style={{ width: 160 }} />

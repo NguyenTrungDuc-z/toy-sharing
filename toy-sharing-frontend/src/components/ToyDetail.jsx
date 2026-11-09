@@ -2,18 +2,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   App, Row, Col, Image, Tag, Rate, Card, Button, Avatar, Typography, Breadcrumb,
-  Divider, Empty, Spin, Flex, Alert,
+  Divider, Empty, Spin, Flex, Alert, Tooltip,
 } from 'antd';
 import {
   UserOutlined, EnvironmentOutlined, SafetyCertificateOutlined, HomeOutlined, GiftOutlined,
 } from '@ant-design/icons';
+import { TOY_CONDITIONS } from '../constants/toyConditions';
 import BorrowRequestModal from './BorrowRequestModal';
 
-const conditionMeta = {
-  new: { label: 'Mới 100%', color: 'green' },
-  like_new: { label: 'Như mới', color: 'cyan' },
-  used: { label: 'Đã qua sử dụng', color: 'orange' },
-};
+const conditionMeta = Object.fromEntries(
+  TOY_CONDITIONS.map(c => [c.value, { label: c.label, color: c.color, rubric: c.rubric }])
+);
 const MANGO = '#ffb627';
 
 export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDetail, viewCategory }) {
@@ -108,7 +107,7 @@ export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDeta
           <Flex gap={8} wrap style={{ marginBottom: 12 }}>
             <Tag color="blue">{toy.ageRange}</Tag>
             <Tag>{toy.category}</Tag>
-            <Tag color={cond.color}>{cond.label}</Tag>
+            <Tooltip title={cond.rubric}><Tag color={cond.color} style={{ cursor: 'help' }}>Tình trạng: {cond.label}</Tag></Tooltip>
             <Tag color={toy.status === 'available' ? 'green' : 'default'}>
               {toy.status === 'available' ? 'Đang sẵn sàng' : 'Đang được mượn'}
             </Tag>

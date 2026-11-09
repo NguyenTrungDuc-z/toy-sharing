@@ -13,14 +13,13 @@ import BorrowRequestModal from './BorrowRequestModal';
 import ToyReviewsModal from './ToyReviewsModal';
 import SafetyModal from './SafetyModal';
 import { VIETNAM_REGIONS } from '../constants/vietnamLocations';
+import { TOY_CONDITIONS } from '../constants/toyConditions';
 
 const MANGO = '#ffb627';
 
-const conditionTag = {
-  new: { text: 'Mới 100%', color: 'green' },
-  like_new: { text: 'Như mới', color: 'cyan' },
-  used: { text: 'Đã dùng tốt', color: 'default' },
-};
+const conditionTag = Object.fromEntries(
+  TOY_CONDITIONS.map(c => [c.value, { text: c.label, color: c.color }])
+);
 
 // Placeholder đẹp theo danh mục khi đồ chơi thiếu ảnh / ảnh hỏng
 const categoryVisual = {

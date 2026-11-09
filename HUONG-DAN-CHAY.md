@@ -69,18 +69,27 @@ Seed tạo: ~28 người dùng, ~90 đồ chơi (có ảnh thật), ~72 lượt 
 
 ## 4. Chạy ứng dụng
 
+### Cách A — MỘT lệnh chạy cả hai (khuyên dùng)
+Tại **thư mục gốc** `toy-sharing`:
+```bash
+npm install        # chỉ cần lần đầu (cài 'concurrently' cho lệnh gộp)
+npm run dev        # chạy đồng thời backend + frontend
+```
+> Lần đầu tiện nhất: `npm run install:all` (cài cả gốc + backend + frontend) → `npm run seed:fresh` → `npm run dev`.
+
+### Cách B — 2 terminal riêng
 ```bash
 # Terminal 1 — Backend
-cd toy-sharing-backend
-npm run dev        # auto-reload (hoặc: npm start)
+cd toy-sharing-backend && npm run dev      # hoặc: npm start
 
 # Terminal 2 — Frontend
-cd toy-sharing-frontend
-npm run dev
+cd toy-sharing-frontend && npm run dev
 ```
 
 - Backend: **http://localhost:5000**
 - Frontend: **http://localhost:5173**  ← mở trình duyệt vào đây
+
+> Các lệnh gộp khác (chạy ở thư mục gốc): `npm run seed` / `npm run seed:fresh` (tạo dữ liệu), `npm run test:e2e` (kiểm thử), `npm run cleanup:apply` (dọn dữ liệu test rác).
 
 ---
 

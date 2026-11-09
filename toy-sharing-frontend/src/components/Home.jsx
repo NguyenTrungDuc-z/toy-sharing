@@ -4,8 +4,6 @@ import BorrowRequestModal from './BorrowRequestModal';
 import ToyReviewsModal from './ToyReviewsModal';
 import SafetyModal from './SafetyModal';
 import { VIETNAM_REGIONS } from '../constants/vietnamLocations';
-import Toy3DHero from './Toy3DHero';
-import ToyCard3D from './ToyCard3D';
 
 export default function Home({ user, setPage, viewToyDetail }) {
   const [toys, setToys] = useState([]);
@@ -19,10 +17,6 @@ export default function Home({ user, setPage, viewToyDetail }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, totalPages: 1 });
   const [favorites, setFavorites] = useState([]);
-  const [reportToy, setReportToy] = useState(null);
-  const [reportReason, setReportReason] = useState('');
-  const [reportDetails, setReportDetails] = useState('');
-  const [actionLoading, setActionLoading] = useState(false);
   const [refreshVersion, setRefreshVersion] = useState(0);
 
   // Modals
@@ -39,13 +33,17 @@ export default function Home({ user, setPage, viewToyDetail }) {
 
   // Copy coupon
   const handleCopyVoucher = (code = 'TOYSHARENEW') => {
-    navigator.clipboard?.writeText(code).then(() => {
-      setCopiedCoupon(true);
-      showToast(`Đã sao chép mã "${code}"! Giảm 20.000đ khi cọc.`);
-      setTimeout(() => setCopiedCoupon(false), 2500);
-    }).catch(() => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(() => {
+        setCopiedCoupon(true);
+        showToast(`Đã sao chép mã "${code}"! Giảm 20.000đ khi cọc.`);
+        setTimeout(() => setCopiedCoupon(false), 2500);
+      }).catch(() => {
+        showToast(`Mã ưu đãi của bạn: ${code}`, 'info');
+      });
+    } else {
       showToast(`Mã ưu đãi của bạn: ${code}`, 'info');
-    });
+    }
   };
 
   // Fetch toys
@@ -65,7 +63,7 @@ export default function Home({ user, setPage, viewToyDetail }) {
         setPagination(res.data.pagination || { total: 0, totalPages: 1 });
       })
       .catch(err => {
-        console.error("Lỗi lấy dữ liệu:", err);
+        console.error('Lỗi lấy dữ liệu đồ chơi:', err);
         if (active) setToys([]);
       })
       .finally(() => {
@@ -89,7 +87,7 @@ export default function Home({ user, setPage, viewToyDetail }) {
   const handleBorrowClick = (toy, e) => {
     if (e) e.stopPropagation();
     if (!user) {
-      showToast("Vui lòng đăng nhập để mượn món đồ chơi này!", "info");
+      showToast('Vui lòng đăng nhập để mượn món đồ chơi này!', 'info');
       setPage('login');
       return;
     }
@@ -125,28 +123,6 @@ export default function Home({ user, setPage, viewToyDetail }) {
     }
   };
 
-  const handleSubmitReport = async (event) => {
-    event.preventDefault();
-    if (!reportToy || !reportReason) return;
-    setActionLoading(true);
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `http://localhost:5000/api/toys/${reportToy._id}/report`,
-        { reason: reportReason, details: reportDetails },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-      showToast(response.data.message || 'Đã gửi báo cáo kiểm duyệt.');
-      setReportToy(null);
-      setReportReason('');
-      setReportDetails('');
-    } catch (error) {
-      showToast(error.response?.data?.message || 'Không thể gửi báo cáo.', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const isOwnToy = (toy) => {
     if (!user || !toy.ownerId) return false;
     const userId = user.id || user._id;
@@ -175,41 +151,82 @@ export default function Home({ user, setPage, viewToyDetail }) {
 
   const categories = [
     { key: 'all', label: 'Tất cả', icon: '🧸' },
-    { key: 'Xếp hình', label: 'Xếp hình', icon: '🧩' },
-    { key: 'Giáo dục', label: 'STEM & Giáo dục', icon: '🔬' },
-    { key: 'Hành động', label: 'Xe & Hành động', icon: '🏎️' },
-    { key: 'Công nghệ', label: 'Công nghệ', icon: '🤖' },
-    { key: 'Khác', label: 'Sáng tạo & Khác', icon: '🎨' },
+    { key: 'Xếp hình', label: 'Xếp hình & Lego', icon: '🧩' },
+    { key: 'Giáo dục', label: 'STEM & Trí tuệ', icon: '🔬' },
+    { key: 'Hành động', label: 'Xe & Vận động', icon: '🏎️' },
+    { key: 'Công nghệ', label: 'Robot & Công nghệ', icon: '🤖' },
+    { key: 'Khác', label: 'Mỹ thuật & Sáng tạo', icon: '🎨' },
   ];
 
   return (
-    <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '24px 16px 60px' }}>
+    <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 20px 60px' }}>
 
-      {/* 1. INTERACTIVE THREE.JS 3D HERO VIEWPORT */}
-      <Toy3DHero onExploreClick={() => {
-        const el = document.getElementById('search-filter-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }} />
-
-      {/* 2. CAPSULE SEARCH BAR: TẤT CẢ TRONG 1 THANH GỌN GÀNG */}
-      <div id="search-filter-section" style={{
+      {/* ========================================================
+          1. HERO SECTION CHUẨN UI/UX PRO MAX (AIRY, CLEAN, PREMIUM)
+          ======================================================== */}
+      <section style={{
+        padding: '44px 20px 32px',
         textAlign: 'center',
-        padding: '12px 16px 24px',
-        maxWidth: '860px',
-        margin: '0 auto',
+        background: 'linear-gradient(180deg, rgba(255, 247, 237, 0.7) 0%, rgba(255, 253, 249, 1) 100%)',
+        borderRadius: '32px',
+        border: '1px solid rgba(254, 215, 170, 0.5)',
+        margin: '16px 0 28px'
       }}>
-        {/* CAPSULE SEARCH BAR: TẤT CẢ TRONG 1 THANH GỌN GÀNG */}
+        {/* TRUST BADGE */}
         <div style={{
-          background: 'var(--color-card)',
-          borderRadius: '40px',
-          padding: '6px 8px 6px 18px',
-          boxShadow: 'var(--shadow-md)',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'rgba(255, 255, 255, 0.9)',
+          backdropFilter: 'blur(8px)',
+          padding: '6px 16px',
+          borderRadius: '24px',
+          border: '1px solid var(--color-primary-border)',
+          boxShadow: '0 2px 8px rgba(234, 88, 12, 0.08)',
+          marginBottom: '16px'
+        }}>
+          <span style={{ fontSize: '14px' }}>🛡️</span>
+          <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-primary-hover)' }}>
+            Nền tảng chia sẻ đồ chơi số 1 cho gia đình Việt
+          </span>
+        </div>
+
+        {/* HERO HEADING */}
+        <h1 style={{
+          fontSize: '40px',
+          fontWeight: '900',
+          color: 'var(--color-foreground)',
+          lineHeight: '1.25',
+          letterSpacing: '-0.8px',
+          margin: '0 auto 14px',
+          maxWidth: '780px'
+        }}>
+          Chia sẻ đồ chơi giáo dục cho bé,{' '}
+          <span style={{ color: 'var(--color-primary)' }}>Tiết kiệm 80% chi phí</span>
+        </h1>
+
+        <p style={{
+          fontSize: '16px',
+          color: 'var(--color-muted-foreground)',
+          lineHeight: '1.6',
+          maxWidth: '680px',
+          margin: '0 auto 28px'
+        }}>
+          Khám phá hàng trăm bộ đồ chơi thông minh chính hãng. Quy trình khử trùng <strong>100% UV-C</strong> chuẩn y tế, ký quỹ an toàn tuyệt đối qua VietQR.
+        </p>
+
+        {/* CAPSULE SEARCH BAR (AIRBNB-STYLE COMPACT CONTROLS) */}
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '44px',
+          padding: '8px 10px 8px 22px',
+          boxShadow: '0 8px 30px rgba(41, 37, 36, 0.08)',
           border: '1.5px solid var(--color-border)',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '12px',
           flexWrap: 'wrap',
-          maxWidth: '820px',
+          maxWidth: '860px',
           margin: '0 auto'
         }}>
           {/* Ô nhập từ khóa */}
@@ -219,13 +236,13 @@ export default function Home({ user, setPage, viewToyDetail }) {
               type="text"
               value={searchTerm}
               onChange={e => { setCurrentPage(1); setSearchTerm(e.target.value); }}
-              placeholder="Tìm đồ chơi: Lego, xe, robot..."
+              placeholder="Tìm đồ chơi: Lego, xe, robot, montessori..."
               style={{
                 width: '100%',
                 border: 'none',
                 outline: 'none',
                 fontSize: '14px',
-                color: 'var(--text-main)',
+                color: 'var(--color-foreground)',
                 background: 'transparent'
               }}
             />
@@ -239,7 +256,7 @@ export default function Home({ user, setPage, viewToyDetail }) {
             )}
           </div>
 
-          <div style={{ width: '1px', height: '24px', background: '#ebdcd0', display: 'none', mdDisplay: 'block' }} />
+          <div style={{ width: '1px', height: '24px', background: 'var(--color-border)' }} />
 
           {/* Chọn Tỉnh / Thành */}
           <div style={{ flex: '1.2 1 150px' }}>
@@ -250,27 +267,27 @@ export default function Home({ user, setPage, viewToyDetail }) {
                 width: '100%',
                 border: 'none',
                 outline: 'none',
-                background: 'transparent',
                 fontSize: '13px',
-                fontWeight: '600',
-                color: '#6b584a',
+                color: filterLocation === 'all' ? 'var(--color-muted-foreground)' : 'var(--color-foreground)',
+                fontWeight: filterLocation === 'all' ? '400' : '600',
+                background: 'transparent',
                 cursor: 'pointer'
               }}
             >
               <option value="all">📍 Toàn quốc</option>
-              {VIETNAM_REGIONS.map(reg => (
-                <optgroup key={reg.region} label={reg.region}>
-                  {reg.provinces.map(p => (
-                    <option key={p} value={p}>{p}</option>
+              {VIETNAM_REGIONS.map(group => (
+                <optgroup key={group.region} label={group.region}>
+                  {group.provinces.map(prov => (
+                    <option key={prov} value={prov}>{prov}</option>
                   ))}
                 </optgroup>
               ))}
             </select>
           </div>
 
-          <div style={{ width: '1px', height: '24px', background: '#ebdcd0', display: 'none', mdDisplay: 'block' }} />
+          <div style={{ width: '1px', height: '24px', background: 'var(--color-border)' }} />
 
-          {/* Chọn Độ tuổi */}
+          {/* Độ tuổi */}
           <div style={{ flex: '1 1 120px' }}>
             <select
               value={filterAge}
@@ -279,10 +296,10 @@ export default function Home({ user, setPage, viewToyDetail }) {
                 width: '100%',
                 border: 'none',
                 outline: 'none',
-                background: 'transparent',
                 fontSize: '13px',
-                fontWeight: '600',
-                color: '#6b584a',
+                color: filterAge === 'all' ? 'var(--color-muted-foreground)' : 'var(--color-foreground)',
+                fontWeight: filterAge === 'all' ? '400' : '600',
+                background: 'transparent',
                 cursor: 'pointer'
               }}
             >
@@ -299,10 +316,10 @@ export default function Home({ user, setPage, viewToyDetail }) {
             onClick={() => {}}
             className="btn-primary"
             style={{
-              padding: '10px 22px',
+              padding: '11px 24px',
               borderRadius: '30px',
               fontSize: '14px',
-              fontWeight: '600',
+              fontWeight: '700',
               flexShrink: 0
             }}
           >
@@ -311,8 +328,8 @@ export default function Home({ user, setPage, viewToyDetail }) {
         </div>
 
         {/* Mã voucher gọn gàng dưới thanh tìm kiếm */}
-        <div style={{ marginTop: '12px', fontSize: '13px', color: 'var(--color-muted-foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-          <span>🎉 Mã giảm 20k tiền cọc cho ba mẹ mới:</span>
+        <div style={{ marginTop: '14px', fontSize: '13px', color: 'var(--color-muted-foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <span>🎉 Ưu đãi đặc quyền ba mẹ mới:</span>
           <strong
             onClick={() => handleCopyVoucher('TOYSHARENEW')}
             title="Nhấn để sao chép"
@@ -322,20 +339,24 @@ export default function Home({ user, setPage, viewToyDetail }) {
               textDecoration: 'underline',
               background: 'var(--color-primary-light)',
               padding: '2px 8px',
-              borderRadius: '6px'
+              borderRadius: '6px',
+              border: '1px solid var(--color-primary-border)'
             }}
           >
             {copiedCoupon ? '✓ Đã chép TOYSHARENEW' : 'TOYSHARENEW'}
           </strong>
+          <span style={{ fontSize: '12px', color: '#16a34a', fontWeight: '600' }}>(Giảm 20.000đ tiền cọc)</span>
         </div>
-      </div>
+      </section>
 
-      {/* 2. CATEGORY TABS (THANH DANH MỤC NGANG AIRBNB-STYLE) */}
+      {/* ========================================================
+          2. CATEGORY TABS (AIRBNB-STYLE HORIZONTAL SELECTOR)
+          ======================================================== */}
       <div style={{
         display: 'flex',
         justifyContent: 'center',
-        gap: '8px',
-        padding: '12px 0 24px',
+        gap: '10px',
+        padding: '8px 0 20px',
         overflowX: 'auto',
         marginBottom: '16px'
       }}>
@@ -349,7 +370,7 @@ export default function Home({ user, setPage, viewToyDetail }) {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '10px 18px',
+                padding: '10px 20px',
                 borderRadius: '24px',
                 border: isSelected ? '1.5px solid var(--color-primary)' : '1px solid var(--color-border)',
                 background: isSelected ? 'var(--color-primary-light)' : 'var(--color-card)',
@@ -357,8 +378,9 @@ export default function Home({ user, setPage, viewToyDetail }) {
                 fontWeight: isSelected ? '700' : '500',
                 fontSize: '13px',
                 cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                flexShrink: 0
+                transition: 'all 0.18s ease',
+                flexShrink: 0,
+                boxShadow: isSelected ? '0 2px 8px rgba(234, 88, 12, 0.15)' : 'none'
               }}
             >
               <span style={{ fontSize: '16px' }}>{cat.icon}</span>
@@ -368,33 +390,35 @@ export default function Home({ user, setPage, viewToyDetail }) {
         })}
       </div>
 
-      {/* 3. SUB-CONTROLS HEADER (SỐ LƯỢNG & SẮP XẾP GỌN GÀNG) */}
+      {/* ========================================================
+          3. SUB-CONTROLS & SORTING HEADER
+          ======================================================== */}
       <div style={{
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '20px',
+        marginBottom: '24px',
         flexWrap: 'wrap',
         gap: '12px',
-        borderBottom: '1px solid #f3ede7',
-        paddingBottom: '12px'
+        paddingBottom: '14px',
+        borderBottom: '1px solid var(--color-border)'
       }}>
-        <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)' }}>
-          Kho đồ chơi ({filteredToys.length})
+        <div style={{ fontSize: '14px', color: 'var(--color-muted-foreground)', fontWeight: '500' }}>
+          Đang hiển thị <strong style={{ color: 'var(--color-foreground)' }}>{filteredToys.length}</strong> món đồ chơi sẵn sàng mượn
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Lọc tình trạng nhanh */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Lọc tình trạng */}
           <select
             value={filterCondition}
             onChange={e => { setCurrentPage(1); setFilterCondition(e.target.value); }}
             style={{
-              padding: '6px 12px',
-              borderRadius: '10px',
-              border: '1px solid #ebdcd0',
-              background: '#fff',
+              padding: '7px 14px',
+              borderRadius: '12px',
+              border: '1px solid var(--color-border)',
+              background: '#ffffff',
               fontSize: '13px',
-              color: '#52473f',
+              color: 'var(--color-foreground)',
               cursor: 'pointer',
               outline: 'none'
             }}
@@ -410,12 +434,12 @@ export default function Home({ user, setPage, viewToyDetail }) {
             value={sort}
             onChange={e => { setCurrentPage(1); setSort(e.target.value); }}
             style={{
-              padding: '6px 12px',
-              borderRadius: '10px',
-              border: '1px solid #ebdcd0',
-              background: '#fff',
+              padding: '7px 14px',
+              borderRadius: '12px',
+              border: '1px solid var(--color-border)',
+              background: '#ffffff',
               fontSize: '13px',
-              color: '#52473f',
+              color: 'var(--color-foreground)',
               cursor: 'pointer',
               outline: 'none'
             }}
@@ -428,24 +452,30 @@ export default function Home({ user, setPage, viewToyDetail }) {
         </div>
       </div>
 
-      {/* 4. TOYS FEED (LƯỚI ĐỒ CHƠI THIẾT KẾ HIỆN ĐẠI, THOÁNG ĐÃNG) */}
+      {/* ========================================================
+          4. PRODUCT GRID (CHUẨN CARD AIRBNB / E-COMMERCE MODERN)
+          ======================================================== */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--text-muted)' }}>
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🧸</div>
-          Đang tải kho đồ chơi...
+        <div style={{ textAlign: 'center', padding: '80px 0', color: 'var(--color-muted-foreground)' }}>
+          <div style={{ fontSize: '36px', marginBottom: '10px' }}>🧸</div>
+          <p style={{ fontWeight: '600' }}>Đang tải danh sách đồ chơi...</p>
         </div>
       ) : filteredToys.length === 0 ? (
         <div style={{
-          background: '#ffffff',
-          padding: '48px 20px',
-          borderRadius: '20px',
+          background: 'var(--color-card)',
+          padding: '50px 20px',
+          borderRadius: '24px',
           textAlign: 'center',
-          border: '1px dashed #ebdcd0',
-          color: 'var(--text-muted)',
+          border: '1px dashed var(--color-border)',
+          color: 'var(--color-muted-foreground)',
           margin: '20px 0 40px'
         }}>
-          <p style={{ fontSize: '15px', color: 'var(--text-main)', fontWeight: '600', marginBottom: '10px' }}>
-            Không tìm thấy đồ chơi phù hợp với bộ lọc hiện tại.
+          <div style={{ fontSize: '42px', marginBottom: '12px' }}>🔍</div>
+          <h3 style={{ fontSize: '17px', color: 'var(--color-foreground)', fontWeight: '700', marginBottom: '8px' }}>
+            Không tìm thấy đồ chơi phù hợp với bộ lọc hiện tại
+          </h3>
+          <p style={{ fontSize: '14px', margin: '0 0 20px' }}>
+            Hãy thử tìm bằng từ khóa khác hoặc xóa bộ lọc để xem toàn bộ kho đồ chơi.
           </p>
           <button
             onClick={() => {
@@ -456,33 +486,233 @@ export default function Home({ user, setPage, viewToyDetail }) {
               setFilterCondition('all');
             }}
             className="btn-secondary"
-            style={{ padding: '8px 20px', fontSize: '13px' }}
+            style={{ padding: '8px 22px', fontSize: '13px' }}
           >
-            Xóa bộ lọc
+            Xóa tất cả bộ lọc
           </button>
         </div>
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
           gap: '24px',
           marginBottom: '40px'
         }}>
-          {filteredToys.map((toy) => (
-            <ToyCard3D
-              key={toy._id}
-              toy={toy}
-              isFavorite={favorites.includes(toy._id)}
-              onToggleFavorite={handleToggleFavorite}
-              onClick={() => viewToyDetail && viewToyDetail(toy._id)}
-              onBorrowClick={handleBorrowClick}
-              isOwnToy={isOwnToy(toy)}
-            />
-          ))}
+          {filteredToys.map((toy) => {
+            const isFav = favorites.includes(toy._id);
+            const ownerName = typeof toy.ownerId === 'object' ? toy.ownerId?.name : (toy.ownerName || 'Chủ đồ chơi');
+
+            return (
+              <div
+                key={toy._id}
+                onClick={() => viewToyDetail && viewToyDetail(toy._id)}
+                style={{
+                  background: 'var(--color-card)',
+                  borderRadius: '22px',
+                  overflow: 'hidden',
+                  border: '1px solid var(--color-border)',
+                  boxShadow: 'var(--shadow-sm)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  transition: 'transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease'
+                }}
+                onMouseOver={e => {
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+                  e.currentTarget.style.borderColor = 'var(--color-primary-border)';
+                }}
+                onMouseOut={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+                  e.currentTarget.style.borderColor = 'var(--color-border)';
+                }}
+              >
+                {/* ẢNH ĐỒ CHƠI & BADGES */}
+                <div>
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    height: '196px',
+                    background: '#fbf7f4',
+                    overflow: 'hidden'
+                  }}>
+                    {toy.images && toy.images.length > 0 ? (
+                      <img
+                        src={toy.images[0]}
+                        alt={toy.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          transition: 'transform 0.3s ease'
+                        }}
+                      />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '44px' }}>
+                        🧸
+                      </div>
+                    )}
+
+                    {/* Nút tim yêu thích góc phải */}
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleFavorite(toy, e)}
+                      title={isFav ? 'Bỏ yêu thích' : 'Yêu thích'}
+                      style={{
+                        position: 'absolute',
+                        top: '10px',
+                        right: '10px',
+                        background: 'rgba(255, 255, 255, 0.92)',
+                        backdropFilter: 'blur(4px)',
+                        border: 'none',
+                        width: '34px',
+                        height: '34px',
+                        borderRadius: '50%',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '17px',
+                        color: isFav ? '#dc2626' : '#a8a29e',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      {isFav ? '♥' : '♡'}
+                    </button>
+
+                    {/* Badge Khử khuẩn UV-C */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '10px',
+                      left: '10px',
+                      background: 'rgba(22, 163, 74, 0.92)',
+                      backdropFilter: 'blur(4px)',
+                      color: '#ffffff',
+                      padding: '3px 10px',
+                      borderRadius: '14px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}>
+                      <span>🛡️</span>
+                      <span>100% UV-C</span>
+                    </div>
+
+                    {/* Badge địa điểm */}
+                    {toy.location && (
+                      <span style={{
+                        position: 'absolute',
+                        bottom: '8px',
+                        left: '8px',
+                        background: 'rgba(255, 255, 255, 0.94)',
+                        backdropFilter: 'blur(4px)',
+                        padding: '3px 9px',
+                        borderRadius: '10px',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        color: '#44403c',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
+                      }}>
+                        📍 {toy.location}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* THÔNG TIN CHÍNH */}
+                  <div style={{ padding: '14px 16px 8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '12px', color: 'var(--color-primary)', fontWeight: '700' }}>
+                        {toy.category}
+                      </span>
+                      <span style={{ fontSize: '12px', color: 'var(--color-muted-foreground)' }}>
+                        {toy.ageRange}
+                      </span>
+                    </div>
+
+                    <h3 style={{
+                      fontSize: '15px',
+                      fontWeight: '700',
+                      color: 'var(--color-foreground)',
+                      lineHeight: '1.4',
+                      height: '42px',
+                      overflow: 'hidden',
+                      margin: '6px 0',
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical'
+                    }}>
+                      {toy.name}
+                    </h3>
+
+                    {/* Đánh giá sao & Chủ sở hữu */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: '#f59e0b', fontWeight: '700' }}>
+                          ★ {toy.rating?.avg > 0 ? toy.rating.avg.toFixed(1) : '5.0'}
+                        </span>
+                        <span style={{ color: '#a8a29e' }}>
+                          ({toy.rating?.count || 0})
+                        </span>
+                      </div>
+                      <span style={{ color: 'var(--color-muted-foreground)', fontStyle: 'italic', fontSize: '12px' }}>
+                        {ownerName}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* HÀNG DƯỚI CÙNG: TIỀN CỌC & NÚT MƯỢN */}
+                <div style={{
+                  padding: '12px 16px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderTop: '1px solid #f6f1ea',
+                  marginTop: '6px'
+                }}>
+                  <div>
+                    <span style={{ fontSize: '11px', color: 'var(--color-muted-foreground)', display: 'block' }}>Tiền cọc</span>
+                    <strong style={{ fontSize: '15px', color: 'var(--color-primary)', fontWeight: '800' }}>
+                      {(toy.depositRequired || 0).toLocaleString()}đ
+                    </strong>
+                  </div>
+
+                  {isOwnToy(toy) ? (
+                    <span style={{ fontSize: '12px', color: 'var(--color-muted-foreground)', fontWeight: '600', background: 'var(--color-muted)', padding: '5px 12px', borderRadius: '16px' }}>
+                      Của bạn
+                    </span>
+                  ) : toy.status === 'borrowed' ? (
+                    <span style={{ fontSize: '12px', color: '#b45309', fontWeight: '600', background: '#fef3c7', padding: '5px 12px', borderRadius: '16px' }}>
+                      Đang mượn
+                    </span>
+                  ) : (
+                    <button
+                      onClick={(e) => handleBorrowClick(toy, e)}
+                      className="btn-primary"
+                      style={{
+                        padding: '7px 18px',
+                        borderRadius: '20px',
+                        fontSize: '13px',
+                        fontWeight: '700'
+                      }}
+                    >
+                      Mượn ngay
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
-      {/* 5. PHÂN TRANG GỌN GÀNG */}
+      {/* ========================================================
+          5. PHÂN TRANG GỌN GÀNG
+          ======================================================== */}
       {pagination.totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '14px', margin: '20px 0 50px' }}>
           <button
@@ -490,18 +720,20 @@ export default function Home({ user, setPage, viewToyDetail }) {
             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
             disabled={currentPage <= 1}
             style={{
-              padding: '6px 14px',
-              borderRadius: '10px',
-              border: '1px solid #ebdcd0',
-              background: '#fff',
+              padding: '8px 18px',
+              borderRadius: '12px',
+              border: '1px solid var(--color-border)',
+              background: '#ffffff',
               fontSize: '13px',
+              fontWeight: '600',
               cursor: currentPage <= 1 ? 'not-allowed' : 'pointer',
-              opacity: currentPage <= 1 ? 0.5 : 1
+              opacity: currentPage <= 1 ? 0.5 : 1,
+              color: 'var(--color-foreground)'
             }}
           >
-            ← Trước
+            ← Trang trước
           </button>
-          <span style={{ fontSize: '13px', color: '#8a776a', fontWeight: '500' }}>
+          <span style={{ fontSize: '13px', color: 'var(--color-muted-foreground)', fontWeight: '600' }}>
             Trang {currentPage} / {pagination.totalPages}
           </span>
           <button
@@ -509,99 +741,114 @@ export default function Home({ user, setPage, viewToyDetail }) {
             onClick={() => setCurrentPage(p => Math.min(pagination.totalPages, p + 1))}
             disabled={currentPage >= pagination.totalPages}
             style={{
-              padding: '6px 14px',
-              borderRadius: '10px',
-              border: '1px solid #ebdcd0',
-              background: '#fff',
+              padding: '8px 18px',
+              borderRadius: '12px',
+              border: '1px solid var(--color-border)',
+              background: '#ffffff',
               fontSize: '13px',
+              fontWeight: '600',
               cursor: currentPage >= pagination.totalPages ? 'not-allowed' : 'pointer',
-              opacity: currentPage >= pagination.totalPages ? 0.5 : 1
+              opacity: currentPage >= pagination.totalPages ? 0.5 : 1,
+              color: 'var(--color-foreground)'
             }}
           >
-            Sau →
+            Trang sau →
           </button>
         </div>
       )}
 
-      {/* 6. CAM KẾT NIỀM TIN 3 TRỤ CỘT (TINH GỌN, SANG TRỌNG) */}
-      <div style={{
+      {/* ========================================================
+          6. CAM KẾT NIỀM TIN 3 TRỤ CỘT (TRUST & SAFETY)
+          ======================================================== */}
+      <section style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-        gap: '20px',
-        padding: '30px 24px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '24px',
+        padding: '32px 28px',
         background: '#ffffff',
-        borderRadius: '24px',
-        border: '1px solid #f3ede7',
+        borderRadius: '26px',
+        border: '1px solid var(--color-border)',
+        boxShadow: 'var(--shadow-sm)',
         marginTop: '20px',
         marginBottom: '40px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span style={{ fontSize: '32px' }}>🛡️</span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>
+            🛡️
+          </div>
           <div>
-            <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-main)', marginBottom: '2px' }}>
+            <h4 style={{ fontWeight: '700', fontSize: '15px', color: 'var(--color-foreground)', margin: '0 0 4px' }}>
               Khử khuẩn UV-C 100%
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Làm sạch cồn y tế & tiệt trùng an toàn trước khi bàn giao cho bé.
-            </div>
+            </h4>
+            <p style={{ fontSize: '13px', color: 'var(--color-muted-foreground)', margin: 0, lineHeight: 1.5 }}>
+              Làm sạch cồn y tế & tiệt trùng qua buồng sấy UV-C chuyên dụng trước khi bàn giao cho bé.
+            </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span style={{ fontSize: '32px' }}>⚡</span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>
+            ⚡
+          </div>
           <div>
-            <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-main)', marginBottom: '2px' }}>
+            <h4 style={{ fontWeight: '700', fontSize: '15px', color: 'var(--color-foreground)', margin: '0 0 4px' }}>
               Ký quỹ VietQR an toàn
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Tiền cọc giữ qua tài khoản bảo chứng, hoàn cọc 100% khi trả đồ.
-            </div>
+            </h4>
+            <p style={{ fontSize: '13px', color: 'var(--color-muted-foreground)', margin: 0, lineHeight: 1.5 }}>
+              Tiền cọc giữ qua tài khoản bảo chứng tự động, hoàn cọc 100% minh bạch ngay khi trả đồ.
+            </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span style={{ fontSize: '32px' }}>🚚</span>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: '#fff7ed', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>
+            🚚
+          </div>
           <div>
-            <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-main)', marginBottom: '2px' }}>
-              Giao nhận toàn quốc
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              Kết nối ba mẹ tại 63 tỉnh thành, nhận đồ tại nhà hoặc qua bưu cục.
-            </div>
+            <h4 style={{ fontWeight: '700', fontSize: '15px', color: 'var(--color-foreground)', margin: '0 0 4px' }}>
+              Kết nối ba mẹ toàn quốc
+            </h4>
+            <p style={{ fontSize: '13px', color: 'var(--color-muted-foreground)', margin: 0, lineHeight: 1.5 }}>
+              Mạng lưới cộng đồng phụ huynh tại 63 tỉnh thành, nhận đồ tại nhà hoặc qua bưu cục gần nhất.
+            </p>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 7. FOOTER TINH GỌN, HIỆN ĐẠI */}
+      {/* ========================================================
+          7. FOOTER CHUẨN HIỆN ĐẠI
+          ======================================================== */}
       <footer style={{
-        borderTop: '1px solid #f1eae4',
-        paddingTop: '24px',
+        borderTop: '1px solid var(--color-border)',
+        paddingTop: '28px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         flexWrap: 'wrap',
-        gap: '12px',
+        gap: '14px',
         fontSize: '13px',
-        color: '#8a776a'
+        color: 'var(--color-muted-foreground)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontWeight: '700', color: 'var(--primary-color)' }}>🧸 ToyShare Vietnam</span>
+          <span style={{ fontWeight: '800', color: 'var(--color-primary)' }}>🧸 ToyShare Vietnam</span>
           <span>•</span>
-          <span>Nền tảng chia sẻ đồ chơi trẻ em</span>
+          <span>Nền tảng chia sẻ & cho thuê đồ chơi trẻ em</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '18px' }}>
+        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <span
             onClick={() => setIsSafetyModalOpen(true)}
-            style={{ cursor: 'pointer', color: '#be6e15', fontWeight: '500' }}
+            style={{ cursor: 'pointer', color: 'var(--color-primary-hover)', fontWeight: '600' }}
           >
             Chính sách vệ sinh & hoàn cọc
           </span>
-          <span>Hotline: 1900 8888</span>
+          <span>Hotline hỗ trợ: <strong>1900 8888</strong></span>
         </div>
       </footer>
 
-      {/* MODALS */}
+      {/* ========================================================
+          8. MODALS & TOAST
+          ======================================================== */}
       <BorrowRequestModal
         isOpen={!!selectedToyForBorrow}
         onClose={() => setSelectedToyForBorrow(null)}
@@ -622,19 +869,18 @@ export default function Home({ user, setPage, viewToyDetail }) {
         onClose={() => setIsSafetyModalOpen(false)}
       />
 
-      {/* TOAST */}
       {toast && (
         <div style={{
           position: 'fixed',
           bottom: '24px',
           right: '24px',
-          padding: '12px 20px',
-          borderRadius: '12px',
-          backgroundColor: toast.type === 'error' ? '#ef4444' : '#15803d',
-          color: 'white',
+          padding: '12px 22px',
+          borderRadius: '14px',
+          backgroundColor: toast.type === 'error' ? 'var(--color-destructive)' : 'var(--color-accent)',
+          color: '#ffffff',
           fontSize: '13px',
-          fontWeight: '600',
-          boxShadow: '0 6px 18px rgba(0,0,0,0.15)',
+          fontWeight: '700',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
           zIndex: 9999
         }}>
           {toast.message}

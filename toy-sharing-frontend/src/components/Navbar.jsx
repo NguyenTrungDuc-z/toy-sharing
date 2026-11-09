@@ -4,6 +4,7 @@ import NotificationBell from "./NotificationBell";
 export default function Navbar({ page, setPage, user, handleLogout }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
+  // Giao diện Admin giữ nguyên
   if (user && user.role === "admin") {
     return (
       <nav
@@ -11,17 +12,18 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "16px 8%",
+          padding: "16px 6%",
           background: "#1e293b",
           borderBottom: "1px solid #334155",
-          position: "relative",
-          zIndex: 1000,
+          position: "sticky",
+          top: 0,
+          zIndex: 1100,
           color: "white",
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <span
-            style={{ fontSize: "24px", fontWeight: "bold", color: "#38bdf8", cursor: "pointer" }}
+            style={{ fontSize: "22px", fontWeight: "bold", color: "#38bdf8", cursor: "pointer" }}
             onClick={() => setPage("admin-dashboard")}
           >
             🧸 ToyShare
@@ -34,19 +36,16 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
               fontSize: "11px",
               fontWeight: "700",
               color: "#94a3b8",
-              letterSpacing: "0.5px",
             }}
           >
-            BẢNG QUẢN TRỊ VIÊN
+            QUẢN TRỊ VIÊN
           </span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <NotificationBell setPage={setPage} />
           <div style={{ textAlign: "right" }}>
-            <div
-              style={{ fontSize: "14px", fontWeight: "600", color: "#f8fafc" }}
-            >
+            <div style={{ fontSize: "14px", fontWeight: "600", color: "#f8fafc" }}>
               {user.name}
             </div>
             <div style={{ fontSize: "12px", color: "#94a3b8" }}>
@@ -62,60 +61,31 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
               background: "#ef4444",
               color: "#fff",
               border: "none",
-              padding: "10px 20px",
-              borderRadius: "12px",
-              fontSize: "14px",
+              padding: "8px 18px",
+              borderRadius: "10px",
+              fontSize: "13px",
               fontWeight: "600",
               cursor: "pointer",
-              boxShadow: "0 4px 12px rgba(239, 68, 68, 0.2)",
             }}
           >
-            🚪 Đăng xuất
+            Đăng xuất
           </button>
         </div>
       </nav>
     );
   }
 
+  // Giao diện Khách & Người dùng thường: ĐƠN GIẢN, TINH TẾ, HIỆN ĐẠI
   return (
-    <header style={{ position: "sticky", top: 0, zIndex: 1100, background: "#ffffff", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-      {/* TOP UTILITY ANNOUNCEMENT BAR */}
-      <div style={{
-        background: "#251b14",
-        color: "#d5c7bc",
-        padding: "6px 8%",
-        fontSize: "12px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexWrap: "wrap",
-        gap: "8px",
-        borderBottom: "1px solid #3c2c20"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "5px" }}>
-            <span>📞</span> Hotline tư vấn ba mẹ 24/7: <strong style={{ color: "#ff9a42" }}>1900 8888</strong>
-          </span>
-          <span style={{ display: "none", mdDisplay: "inline", color: "#5a4535" }}>|</span>
-          <span style={{ color: "#6ee7b7", fontWeight: "600" }}>
-            🛡️ 100% Đồ chơi được kiểm định & tiệt trùng UV-C
-          </span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <span>📍 Toàn quốc 63 tỉnh thành</span>
-          <span style={{ color: "#ffc58d" }}>⚡ Hoàn cọc VietQR 15 phút</span>
-        </div>
-      </div>
-
-      {/* MAIN NAVBAR */}
+    <header style={{ position: "sticky", top: 0, zIndex: 1100, background: "rgba(255, 255, 255, 0.95)", backdropFilter: "blur(10px)", borderBottom: "1px solid #f1eae4" }}>
       <nav
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "14px 8%",
-          background: "white",
-          borderBottom: "1px solid #f1eae4",
+          maxWidth: "1240px",
+          margin: "0 auto",
+          padding: "14px 20px",
         }}
       >
         {/* LOGO */}
@@ -123,30 +93,29 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "10px",
-            fontSize: "24px",
+            gap: "8px",
+            fontSize: "22px",
             fontWeight: "800",
             color: "var(--primary-color)",
             cursor: "pointer",
-            letterSpacing: "-0.5px"
           }}
           onClick={() => setPage("home")}
         >
           <img
             src="/images/logo.png"
             alt="ToyShare Logo"
-            style={{ height: "50px", objectFit: "contain" }}
+            style={{ height: "42px", objectFit: "contain" }}
           />
           <span>ToyShare</span>
         </div>
 
-        {/* NAVIGATION LINKS */}
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+        {/* NAVIGATION LINKS GỌN GÀNG */}
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
           {[
-            { key: "home", label: "Trang chủ" },
+            { key: "home", label: "Khám phá" },
             { key: "my-toys", label: "Đồ chơi của tôi" },
             { key: "requests", label: "Yêu cầu mượn" },
-            ...(user ? [{ key: "favorites", label: "Đã lưu thích" }] : [])
+            ...(user ? [{ key: "favorites", label: "Yêu thích" }] : [])
           ].map(tab => {
             const isActive = page === tab.key;
             return (
@@ -154,15 +123,15 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                 key={tab.key}
                 onClick={() => setPage(tab.key)}
                 style={{
-                  color: isActive ? "var(--primary-color)" : "var(--text-main)",
-                  background: isActive ? "#fff5ec" : "none",
+                  color: isActive ? "var(--primary-color)" : "#6b584a",
+                  background: isActive ? "#fff5ec" : "transparent",
                   border: "none",
                   padding: "8px 16px",
                   borderRadius: "20px",
-                  fontSize: "15px",
+                  fontSize: "14px",
                   fontWeight: isActive ? "700" : "500",
                   cursor: "pointer",
-                  transition: "all 0.2s ease"
+                  transition: "all 0.15s ease"
                 }}
               >
                 {tab.label}
@@ -171,8 +140,8 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
           })}
         </div>
 
-        {/* USER ACTIONS */}
-        <div style={{ display: "flex", alignItems: "center", gap: "18px" }}>
+        {/* USER PROFILE HOẶC ĐĂNG NHẬP */}
+        <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           {user && <NotificationBell setPage={setPage} />}
 
           {user ? (
@@ -182,12 +151,12 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "10px",
+                  gap: "8px",
                   cursor: "pointer",
-                  padding: "4px 10px",
+                  padding: "4px 10px 4px 6px",
                   borderRadius: "24px",
-                  background: showDropdown ? "#fff5ec" : "transparent",
-                  transition: "background 0.2s"
+                  border: "1px solid #ebdcd0",
+                  background: "#fff",
                 }}
               >
                 <img
@@ -197,23 +166,27 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                   }
                   alt="Avatar"
                   style={{
-                    width: "38px",
-                    height: "38px",
+                    width: "32px",
+                    height: "32px",
                     borderRadius: "50%",
                     backgroundColor: "#fef3c7",
-                    border: "2px solid var(--primary-color)",
                     objectFit: "cover"
                   }}
                 />
                 <span
                   style={{
-                    fontSize: "14px",
-                    fontWeight: "700",
+                    fontSize: "13px",
+                    fontWeight: "600",
                     color: "var(--text-main)",
+                    maxWidth: "120px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap"
                   }}
                 >
-                  {user.name} ▾
+                  {user.name}
                 </span>
+                <span style={{ fontSize: "11px", color: "#9ca3af" }}>▾</span>
               </div>
 
               {showDropdown && (
@@ -221,39 +194,24 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                   style={{
                     position: "absolute",
                     right: 0,
-                    top: "52px",
+                    top: "46px",
                     background: "white",
-                    minWidth: "220px",
-                    borderRadius: "16px",
-                    boxShadow: "0 12px 36px rgba(0,0,0,0.12)",
+                    minWidth: "200px",
+                    borderRadius: "14px",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
                     border: "1px solid #faeee4",
-                    padding: "8px 0",
+                    padding: "6px 0",
                     display: "flex",
                     flexDirection: "column",
                     zIndex: 2000
                   }}
                 >
-                  <div
-                    style={{
-                      padding: "12px 18px",
-                      borderBottom: "1px dashed #f1eae4",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        fontWeight: "700",
-                        color: "var(--text-main)",
-                      }}
-                    >
+                  <div style={{ padding: "10px 16px", borderBottom: "1px solid #f9f4ef" }}>
+                    <div style={{ fontSize: "13px", fontWeight: "700", color: "var(--text-main)" }}>
                       {user.name}
                     </div>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                    <div style={{ fontSize: "11px", color: "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {user.email}
-                    </div>
-                    <div style={{ fontSize: "11px", color: "#059669", fontWeight: "600", marginTop: "2px" }}>
-                      ✓ Thành viên đã xác thực
                     </div>
                   </div>
 
@@ -263,18 +221,13 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                       setShowDropdown(false);
                     }}
                     style={{
-                      padding: "10px 18px",
+                      padding: "9px 16px",
                       textAlign: "left",
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       color: "var(--text-main)",
-                      fontWeight: "500",
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px"
                     }}
                   >
                     👤 Hồ sơ cá nhân
@@ -286,18 +239,13 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                       setShowDropdown(false);
                     }}
                     style={{
-                      padding: "10px 18px",
+                      padding: "9px 16px",
                       textAlign: "left",
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       color: "var(--text-main)",
-                      fontWeight: "500",
-                      width: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px"
                     }}
                   >
                     ❤️ Đồ chơi yêu thích
@@ -309,20 +257,16 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                       setShowDropdown(false);
                     }}
                     style={{
-                      padding: "12px 18px",
+                      padding: "10px 16px",
                       textAlign: "left",
                       background: "none",
                       border: "none",
                       cursor: "pointer",
-                      fontSize: "14px",
-                      color: "#ef4444",
-                      fontWeight: "700",
-                      width: "100%",
-                      borderTop: "1px solid #f9f5f1",
-                      marginTop: "6px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px"
+                      fontSize: "13px",
+                      color: "#dc2626",
+                      fontWeight: "600",
+                      borderTop: "1px solid #f9f4ef",
+                      marginTop: "4px"
                     }}
                   >
                     🚪 Đăng xuất
@@ -331,13 +275,13 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
               )}
             </div>
           ) : (
-            <div style={{ display: "flex", gap: "10px" }}>
+            <div style={{ display: "flex", gap: "8px" }}>
               <button
                 onClick={() => setPage("login")}
                 style={{
-                  padding: "9px 18px",
+                  padding: "8px 16px",
                   borderRadius: "20px",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: "600",
                   background: "#fff",
                   border: "1px solid #ebdcd0",
@@ -351,13 +295,13 @@ export default function Navbar({ page, setPage, user, handleLogout }) {
                 onClick={() => setPage("register")}
                 className="btn-primary"
                 style={{
-                  padding: "9px 20px",
+                  padding: "8px 18px",
                   borderRadius: "20px",
-                  fontSize: "14px",
+                  fontSize: "13px",
                   fontWeight: "600",
                 }}
               >
-                Đăng ký miễn phí
+                Đăng ký
               </button>
             </div>
           )}

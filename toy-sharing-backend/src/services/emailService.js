@@ -137,7 +137,51 @@ Nếu bạn không yêu cầu, vui lòng bỏ qua email này.
     }
 }
 
+/**
+ * Gửi email thông báo chung (nhắc hạn, đồ yêu thích có sẵn...).
+ * Dùng chung một mẫu giao diện gọn gàng, không phụ thuộc nội dung cụ thể.
+ */
+async function sendGenericEmail({ to, subject, heading, lines = [], actionUrl, actionText, userName }) {
+    const transporter = getTransporter();
+    if (!transporter) {
+        console.warn(`[EMAIL] Chưa cấu hình EMAIL_USER/EMAIL_PASS. Bỏ qua gửi email tới ${to}.`);
+        return { sent: false, reason: 'unconfigured' };
+    }
+    const fromAddress = process.env.EMAIL_FROM || `"ToyShare Vietnam" <${process.env.EMAIL_USER || 'no-reply@toyshare.vn'}>`;
+    const bodyParagraphs = lines.map(l => `<p class="content">${l}</p>`).join('');
+    const actionBlock = actionUrl
+        ? `<div style="text-align:center;margin:24px 0;"><a href="${actionUrl}" class="btn-action" target="_blank">${actionText || 'Mở ToyShare'}</a></div>`
+        : '';
+    const htmlContent = `
+    <!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><style>
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#f6f8fa;margin:0;padding:24px;color:#16262e;}
+    .container{max-width:540px;margin:0 auto;background:#fff;border-radius:16px;padding:36px 32px;box-shadow:0 4px 20px rgba(0,0,0,0.06);border:1px solid #e6edf1;}
+    .logo{font-size:22px;font-weight:800;color:#0b6e8f;margin-bottom:20px;display:inline-block;}
+    .header-title{font-size:20px;font-weight:700;color:#16262e;margin-bottom:12px;}
+    .content{font-size:15px;line-height:1.6;color:#44555c;margin:0 0 12px;}
+    .btn-action{display:inline-block;background:#0b6e8f;color:#fff !important;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:700;font-size:15px;}
+    .footer{font-size:13px;color:#8aa0a8;border-top:1px solid #eef3f5;padding-top:20px;margin-top:28px;line-height:1.5;}
+    </style></head><body><div class="container">
+        <div class="logo">ToyShare</div>
+        <div class="header-title">${heading}</div>
+        <p class="content">Xin chào <strong>${userName || 'bạn'}</strong>,</p>
+        ${bodyParagraphs}
+        ${actionBlock}
+        <div class="footer">Trân trọng,<br/>Đội ngũ ToyShare Vietnam - Nền tảng chia sẻ đồ chơi trẻ em</div>
+    </div></body></html>`;
+    const textContent = `[ToyShare] ${heading}\n\nXin chào ${userName || 'bạn'},\n${lines.join('\n')}\n${actionUrl ? '\n' + (actionText || 'Mở') + ': ' + actionUrl : ''}\n\nĐội ngũ ToyShare Vietnam`.trim();
+    try {
+        const info = await transporter.sendMail({ from: fromAddress, to, subject, text: textContent, html: htmlContent });
+        console.log(`[EMAIL] Đã gửi "${subject}" tới ${to}. MessageId: ${info.messageId}`);
+        return { sent: true, messageId: info.messageId };
+    } catch (err) {
+        console.error(`[EMAIL] Lỗi gửi tới ${to}:`, err.message);
+        return { sent: false, error: err.message };
+    }
+}
+
 module.exports = {
     isEmailConfigured,
-    sendResetPasswordEmail
+    sendResetPasswordEmail,
+    sendGenericEmail
 };

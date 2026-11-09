@@ -18,6 +18,7 @@ const typeIcon = {
   return_reported: <InboxOutlined style={{ color: '#0b6e8f' }} />,
   return_confirmed: <SyncOutlined style={{ color: '#0b6e8f' }} />,
   overdue: <FieldTimeOutlined style={{ color: '#dc2626' }} />,
+  due_soon: <ClockCircleOutlined style={{ color: '#d97706' }} />,
   toy_moderated: <SafetyOutlined style={{ color: '#0b6e8f' }} />,
   favorite_available: <HeartOutlined style={{ color: '#e8294b' }} />,
   new_message: <MessageOutlined style={{ color: '#0b6e8f' }} />,

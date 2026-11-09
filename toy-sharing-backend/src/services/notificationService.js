@@ -21,7 +21,8 @@ async function createNotification({ userId, type, title, message, link, relatedI
 async function notifyFavoriteAvailable(toyId, toyName) {
     try {
         const User = require('../models/User');
-        const fans = await User.find({ favorites: toyId }).select('_id');
+        const { sendGenericEmail } = require('./emailService');
+        const fans = await User.find({ favorites: toyId }).select('_id name email');
         for (const fan of fans) {
             await createNotification({
                 userId: fan._id,
@@ -31,6 +32,18 @@ async function notifyFavoriteAvailable(toyId, toyName) {
                 link: 'favorites',
                 relatedId: toyId
             });
+            if (fan.email) {
+                await sendGenericEmail({
+                    to: fan.email,
+                    userName: fan.name,
+                    subject: `[ToyShare] "${toyName}" đã có thể mượn`,
+                    heading: 'Đồ chơi yêu thích đã sẵn sàng',
+                    lines: [`Tin vui! <strong>"${toyName}"</strong> trong danh sách yêu thích của bạn vừa được trả và đã có thể mượn lại.`,
+                            'Hãy nhanh tay gửi yêu cầu trước khi người khác mượn nhé.'],
+                    actionUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+                    actionText: 'Xem ngay'
+                });
+            }
         }
     } catch (err) {
         console.error('Lỗi thông báo favorite available:', err.message);

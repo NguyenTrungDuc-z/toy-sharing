@@ -60,7 +60,10 @@ const borrowRequestSchema = new mongoose.Schema({
     default: 'none'
   },
   returnNote: { type: String },
-  returnReportedDate: { type: Date }
+  returnReportedDate: { type: Date },
+
+  // Đã gửi nhắc "sắp đến hạn trả" hay chưa (tránh gửi lặp mỗi lần quét)
+  dueSoonNotified: { type: Boolean, default: false }
 }, { timestamps: true });
 
 module.exports = mongoose.model('BorrowRequest', borrowRequestSchema);

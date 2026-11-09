@@ -6,7 +6,7 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     enum: ['borrow_request', 'borrow_approved', 'borrow_rejected', 'borrow_cancelled',
            'extension_request', 'extension_approved', 'extension_rejected',
-           'return_reported', 'return_confirmed', 'overdue', 'toy_moderated',
+           'return_reported', 'return_confirmed', 'overdue', 'due_soon', 'toy_moderated',
            'favorite_available', 'new_message', 'new_review'],
     required: true
   },

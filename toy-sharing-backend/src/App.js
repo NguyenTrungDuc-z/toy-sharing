@@ -114,22 +114,30 @@ app.get('/', (req, res) => {
 const PORT = process.env.PORT || 5000;
 
 const { autoReturnOverdueBorrows } = require('./services/overdueService');
+const { remindDueSoonBorrows } = require('./services/reminderService');
 
 async function startServer() {
     try {
         // Chờ kết nối thành công tới Database
-        await connectDB(); 
-        
+        await connectDB();
+
         // Sau đó chạy hàm kiểm tra/tạo tài khoản Admin mặc định
         await createAdminAccount();
 
         // Kiểm tra và tự động chuyển các lượt mượn quá hạn thành 'đã trả' (returned)
         await autoReturnOverdueBorrows();
+        // Nhắc các lượt mượn sắp đến hạn trả
+        await remindDueSoonBorrows();
 
         // Định kỳ quét tự động mỗi 30 giây để xử lý các món quá hạn mượn
         setInterval(() => {
             autoReturnOverdueBorrows();
         }, 30000);
+
+        // Nhắc "sắp đến hạn trả" mỗi 6 giờ (tránh gửi email quá dày)
+        setInterval(() => {
+            remindDueSoonBorrows();
+        }, 6 * 3600 * 1000);
 
         // Cuối cùng mới mở cổng Server lắng nghe kết nối (dùng http server để hỗ trợ socket.io)
         server.listen(PORT, () => {

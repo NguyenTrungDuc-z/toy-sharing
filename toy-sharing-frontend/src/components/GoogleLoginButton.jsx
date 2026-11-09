@@ -85,7 +85,7 @@ export default function GoogleLoginButton({ onLogin, showToast }) {
         onClick={() => showToast && showToast('Đăng nhập Google chưa được cấu hình (thiếu VITE_GOOGLE_CLIENT_ID).', 'info')}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', width: '100%', border: '1px solid #e2d8cf', borderRadius: '12px', backgroundColor: '#fff', fontWeight: '600', fontSize: '13px', color: '#a19286', cursor: 'not-allowed', opacity: 0.7 }}
       >
-        <span>🌐</span> Google (chưa cấu hình)
+        Google (chưa cấu hình)
       </button>
     );
   }

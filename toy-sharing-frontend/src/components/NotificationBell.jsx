@@ -1,21 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { Badge, Button, Popover, List, Empty, Typography } from 'antd';
+import {
+  BellOutlined, InboxOutlined, CheckCircleOutlined, CloseCircleOutlined, StopOutlined,
+  ClockCircleOutlined, LikeOutlined, DislikeOutlined, SyncOutlined, FieldTimeOutlined,
+  SafetyOutlined, HeartOutlined, MessageOutlined, StarOutlined,
+} from '@ant-design/icons';
 
-const typeIcons = {
-  borrow_request: '📩',
-  borrow_approved: '✅',
-  borrow_rejected: '❌',
-  borrow_cancelled: '🚫',
-  extension_request: '⏳',
-  extension_approved: '👍',
-  extension_rejected: '👎',
-  return_reported: '📦',
-  return_confirmed: '🔄',
-  overdue: '⏰',
-  toy_moderated: '🛡️',
-  favorite_available: '💛',
-  new_message: '💬',
-  new_review: '⭐'
+const typeIcon = {
+  borrow_request: <InboxOutlined style={{ color: '#0b6e8f' }} />,
+  borrow_approved: <CheckCircleOutlined style={{ color: '#16a34a' }} />,
+  borrow_rejected: <CloseCircleOutlined style={{ color: '#dc2626' }} />,
+  borrow_cancelled: <StopOutlined style={{ color: '#6b7280' }} />,
+  extension_request: <ClockCircleOutlined style={{ color: '#d97706' }} />,
+  extension_approved: <LikeOutlined style={{ color: '#16a34a' }} />,
+  extension_rejected: <DislikeOutlined style={{ color: '#dc2626' }} />,
+  return_reported: <InboxOutlined style={{ color: '#0b6e8f' }} />,
+  return_confirmed: <SyncOutlined style={{ color: '#0b6e8f' }} />,
+  overdue: <FieldTimeOutlined style={{ color: '#dc2626' }} />,
+  toy_moderated: <SafetyOutlined style={{ color: '#0b6e8f' }} />,
+  favorite_available: <HeartOutlined style={{ color: '#e8294b' }} />,
+  new_message: <MessageOutlined style={{ color: '#0b6e8f' }} />,
+  new_review: <StarOutlined style={{ color: '#ffb627' }} />,
 };
 
 function timeAgo(dateStr) {
@@ -25,35 +31,29 @@ function timeAgo(dateStr) {
   if (mins < 60) return `${mins} phút trước`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours} giờ trước`;
-  const days = Math.floor(hours / 24);
-  return `${days} ngày trước`;
+  return `${Math.floor(hours / 24)} ngày trước`;
 }
 
 export default function NotificationBell({ setPage }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
-  const panelRef = useRef(null);
 
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
       const res = await axios.get('http://localhost:5000/api/notifications', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(res.data.notifications || []);
       setUnreadCount(res.data.unreadCount || 0);
-    } catch {
-      // bỏ qua lỗi nền
-    }
+    } catch { /* bỏ qua lỗi nền */ }
   };
 
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
-
-    // Realtime qua socket.io nếu có
     let socket;
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
@@ -65,36 +65,18 @@ export default function NotificationBell({ setPage }) {
         setUnreadCount(prev => prev + 1);
       });
     }
-
-    return () => {
-      clearInterval(interval);
-      if (socket) socket.disconnect();
-    };
+    return () => { clearInterval(interval); if (socket) socket.disconnect(); };
   }, []);
-
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
-
-  const handleOpen = () => {
-    setOpen(!open);
-  };
 
   const markAllRead = async () => {
     try {
       const token = localStorage.getItem('token');
       await axios.patch('http://localhost:5000/api/notifications/read-all', {}, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-    } catch {
-      // bỏ qua
-    }
+    } catch { /* bỏ qua */ }
   };
 
   const handleNotifClick = async (notif) => {
@@ -102,62 +84,58 @@ export default function NotificationBell({ setPage }) {
       if (!notif.isRead) {
         const token = localStorage.getItem('token');
         await axios.patch(`http://localhost:5000/api/notifications/${notif._id}/read`, {}, {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
         setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
-    } catch {
-      // bỏ qua
-    }
-    if (notif.link) {
-      setOpen(false);
-      setPage(notif.link);
-    }
+    } catch { /* bỏ qua */ }
+    if (notif.link) { setOpen(false); setPage(notif.link); }
   };
 
-  return (
-    <div ref={panelRef} style={{ position: 'relative' }}>
-      <button onClick={handleOpen} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', fontSize: '22px', padding: '4px', lineHeight: 1 }} aria-label="Thông báo">
-        🔔
+  const content = (
+    <div style={{ width: 340, maxHeight: 440, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8 }}>
+        <Typography.Text strong>Thông báo</Typography.Text>
         {unreadCount > 0 && (
-          <span style={{ position: 'absolute', top: '-2px', right: '-4px', background: '#ef4444', color: '#fff', fontSize: '10px', fontWeight: '700', minWidth: '18px', height: '18px', borderRadius: '9px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>
-            {unreadCount > 9 ? '9+' : unreadCount}
-          </span>
+          <Button type="link" size="small" onClick={markAllRead} style={{ padding: 0 }}>Đánh dấu đã đọc</Button>
         )}
-      </button>
-
-      {open && (
-        <div style={{ position: 'absolute', right: 0, top: '42px', width: '340px', maxHeight: '440px', background: '#fff', borderRadius: '16px', boxShadow: '0 10px 30px rgba(0,0,0,0.12)', border: '1px solid #f1eae4', zIndex: 2000, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #f1eae4' }}>
-            <span style={{ fontWeight: '700', fontSize: '15px' }}>Thông báo</span>
-            {unreadCount > 0 && (
-              <button onClick={markAllRead} style={{ background: 'none', border: 'none', color: 'var(--primary-color)', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>Đánh dấu đã đọc</button>
+      </div>
+      <div style={{ overflowY: 'auto', flex: 1, margin: '0 -16px' }}>
+        {notifications.length === 0 ? (
+          <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Chưa có thông báo nào" style={{ padding: '24px 0' }} />
+        ) : (
+          <List
+            dataSource={notifications}
+            renderItem={(notif) => (
+              <List.Item
+                onClick={() => handleNotifClick(notif)}
+                style={{ padding: '10px 16px', cursor: 'pointer', background: notif.isRead ? '#fff' : '#eef6f9', borderBottom: '1px solid #f3f5f7' }}
+              >
+                <List.Item.Meta
+                  avatar={<span style={{ fontSize: 18 }}>{typeIcon[notif.type] || <BellOutlined />}</span>}
+                  title={<span style={{ fontWeight: notif.isRead ? 500 : 700, fontSize: 14 }}>{notif.title}</span>}
+                  description={
+                    <>
+                      <div style={{ fontSize: 13, color: '#5a6b73', lineHeight: 1.4 }}>{notif.message}</div>
+                      <div style={{ fontSize: 11, color: '#9fb2ba', marginTop: 2 }}>{timeAgo(notif.createdAt)}</div>
+                    </>
+                  }
+                />
+                {!notif.isRead && <Badge dot />}
+              </List.Item>
             )}
-          </div>
-          <div style={{ overflowY: 'auto', flex: 1 }}>
-            {notifications.length === 0 ? (
-              <p style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '14px' }}>Chưa có thông báo nào.</p>
-            ) : (
-              notifications.map(notif => (
-                <div
-                  key={notif._id}
-                  onClick={() => handleNotifClick(notif)}
-                  style={{ display: 'flex', gap: '12px', padding: '12px 16px', borderBottom: '1px solid #f9f5f1', cursor: 'pointer', background: notif.isRead ? '#fff' : '#fffaf0' }}
-                >
-                  <span style={{ fontSize: '20px', flexShrink: 0 }}>{typeIcons[notif.type] || '🔔'}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: notif.isRead ? '500' : '700', fontSize: '14px', marginBottom: '2px' }}>{notif.title}</div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4' }}>{notif.message}</div>
-                    <div style={{ fontSize: '11px', color: '#bbaa9e', marginTop: '4px' }}>{timeAgo(notif.createdAt)}</div>
-                  </div>
-                  {!notif.isRead && <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary-color)', flexShrink: 0, marginTop: '6px' }} />}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
+          />
+        )}
+      </div>
     </div>
+  );
+
+  return (
+    <Popover content={content} trigger="click" open={open} onOpenChange={setOpen} placement="bottomRight" styles={{ body: { padding: '12px 16px' } }}>
+      <Badge count={unreadCount} size="small" overflowCount={9}>
+        <Button type="text" shape="circle" icon={<BellOutlined style={{ fontSize: 18 }} />} aria-label="Thông báo" />
+      </Badge>
+    </Popover>
   );
 }

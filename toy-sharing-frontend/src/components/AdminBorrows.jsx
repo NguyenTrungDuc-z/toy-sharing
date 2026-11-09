@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Row, Col, Card, Table, Tag, Avatar, Statistic, Alert, Flex } from 'antd';
+import { GiftOutlined } from '@ant-design/icons';
 import AdminLayout from './AdminLayout';
 
 const statusTag = {
@@ -52,7 +53,7 @@ export default function AdminBorrows({ setPage }) {
   const columns = [
     { title: 'Đồ chơi', key: 'toy', render: (_, b) => (
       <Flex align="center" gap={10}>
-        <Avatar shape="square" src={b.toyId?.images?.[0] || undefined} style={{ background: '#f1f4f6' }}>{!b.toyId?.images?.[0] && '🧸'}</Avatar>
+        <Avatar shape="square" src={b.toyId?.images?.[0] || undefined} icon={<GiftOutlined />} style={{ background: '#f1f4f6', color: 'rgba(22,38,46,0.3)' }} />
         <span style={{ fontWeight: 600 }}>{b.toyId?.name || 'Đã xoá'}</span>
       </Flex>
     ) },

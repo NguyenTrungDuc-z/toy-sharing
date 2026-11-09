@@ -169,7 +169,7 @@ export default function App() {
           />
         )}
         
-        {/* 🛡️ KHỐI TRANG CỦA ADMIN: Chỉ mở khi đúng quyền admin */}
+        {/* KHỐI TRANG CỦA ADMIN: Chỉ mở khi đúng quyền admin */}
         {page === 'admin-dashboard' && user?.role === 'admin' && (
           <AdminDashboard setPage={navigateTo} />
         )}

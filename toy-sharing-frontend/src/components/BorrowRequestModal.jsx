@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Modal, Form, Input, DatePicker, Checkbox, Row, Col, Card, Tag, Typography, Alert, Avatar, Flex } from 'antd';
-import { UserOutlined, EnvironmentOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { UserOutlined, EnvironmentOutlined, SafetyCertificateOutlined, GiftOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 
 const { Text, Title } = Typography;
@@ -50,7 +50,7 @@ export default function BorrowRequestModal({ isOpen, onClose, toy, user, onBorro
         <Col xs={24} md={10}>
           <Card styles={{ body: { padding: 16 } }}>
             <div style={{ aspectRatio: '4/3', borderRadius: 12, overflow: 'hidden', background: '#f1f4f6', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {imageUrl ? <img src={imageUrl} alt={toy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 56 }}>🧸</span>}
+              {imageUrl ? <img src={imageUrl} alt={toy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <GiftOutlined style={{ fontSize: 48, color: 'rgba(22,38,46,0.25)' }} />}
             </div>
             <Title level={5} style={{ marginTop: 0 }}>{toy.name}</Title>
             <div style={{ marginBottom: 12 }}>

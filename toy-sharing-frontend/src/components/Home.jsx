@@ -7,6 +7,7 @@ import {
 import {
   HeartOutlined, HeartFilled, FlagOutlined, SafetyCertificateOutlined,
   StarFilled, EnvironmentOutlined,
+  AppstoreOutlined, ExperimentOutlined, CarOutlined, RobotOutlined, GiftOutlined,
 } from '@ant-design/icons';
 import BorrowRequestModal from './BorrowRequestModal';
 import ToyReviewsModal from './ToyReviewsModal';
@@ -23,11 +24,11 @@ const conditionTag = {
 
 // Placeholder đẹp theo danh mục khi đồ chơi thiếu ảnh / ảnh hỏng
 const categoryVisual = {
-  'Xếp hình': { icon: '🧩', bg: 'linear-gradient(135deg,#e0f2f7 0%,#c6e7f0 100%)' },
-  'Giáo dục': { icon: '🔬', bg: 'linear-gradient(135deg,#e8f0fe 0%,#d2e3fc 100%)' },
-  'Hành động': { icon: '🏎️', bg: 'linear-gradient(135deg,#fff1e6 0%,#ffe0c2 100%)' },
-  'Công nghệ': { icon: '🤖', bg: 'linear-gradient(135deg,#eef2f6 0%,#dbe3ea 100%)' },
-  _default: { icon: '🧸', bg: 'linear-gradient(135deg,#fdf0e3 0%,#fbe3c9 100%)' },
+  'Xếp hình': { icon: <AppstoreOutlined />, bg: 'linear-gradient(135deg,#e0f2f7 0%,#c6e7f0 100%)' },
+  'Giáo dục': { icon: <ExperimentOutlined />, bg: 'linear-gradient(135deg,#e8f0fe 0%,#d2e3fc 100%)' },
+  'Hành động': { icon: <CarOutlined />, bg: 'linear-gradient(135deg,#fff1e6 0%,#ffe0c2 100%)' },
+  'Công nghệ': { icon: <RobotOutlined />, bg: 'linear-gradient(135deg,#eef2f6 0%,#dbe3ea 100%)' },
+  _default: { icon: <GiftOutlined />, bg: 'linear-gradient(135deg,#fdf0e3 0%,#fbe3c9 100%)' },
 };
 
 function ToyCover({ toy }) {
@@ -40,7 +41,7 @@ function ToyCover({ toy }) {
   }
   return (
     <div style={{ width: '100%', height: '100%', background: vis.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-      <span style={{ fontSize: 56, lineHeight: 1 }}>{vis.icon}</span>
+      <span style={{ fontSize: 48, lineHeight: 1, color: 'rgba(22,38,46,0.35)' }}>{vis.icon}</span>
       <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(22,38,46,0.45)' }}>{toy.category || 'Đồ chơi'}</span>
     </div>
   );

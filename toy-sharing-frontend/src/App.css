@@ -5,7 +5,7 @@
    Standardized Design Tokens & Color Harmony System
    ======================================================== */
 :root {
-  /* 🎨 1. CORE BRAND & THEME PALETTE — teal-blue (sạch + tin cậy, hợp app giữ cọc) */
+  /* 1. CORE BRAND & THEME PALETTE — teal-blue (sạch + tin cậy, hợp app giữ cọc) */
   --color-primary: #0b6e8f;           /* Teal-blue brand (white text ~5.7:1) */
   --color-primary-hover: #0a5e79;     /* Darker hover */
   --color-primary-light: #e7f2f6;     /* Tint for chips, active tabs, soft fills */
@@ -24,7 +24,7 @@
   --color-accent-border: #bbf7d0;
   --color-on-accent: #ffffff;
 
-  /* 🔔 3. STATUS & FEEDBACK */
+  /* 3. STATUS & FEEDBACK */
   --color-warning: #d97706;           /* Amber notice */
   --color-warning-text: #92400e;      /* WCAG AAA (7.31:1) */
   --color-warning-light: #fffbeb;

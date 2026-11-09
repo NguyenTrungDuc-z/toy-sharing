@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { App, Row, Col, Card, Tag, Avatar, Statistic, Alert, Image, InputNumber, Button, Typography, Flex, Spin, Empty } from 'antd';
+import { GiftOutlined } from '@ant-design/icons';
 import AdminLayout from './AdminLayout';
 
 const { Text } = Typography;
@@ -103,7 +104,7 @@ export default function AdminDeposits({ setPage }) {
               <Card key={d._id} styles={{ body: { padding: 20 } }}>
                 <Flex justify="space-between" align="start" wrap gap={16} style={{ marginBottom: 12 }}>
                   <Flex align="center" gap={12}>
-                    <Avatar shape="square" size={48} src={d.toyId?.images?.[0] || undefined} style={{ background: '#f1f4f6' }}>{!d.toyId?.images?.[0] && '🧸'}</Avatar>
+                    <Avatar shape="square" size={48} src={d.toyId?.images?.[0] || undefined} icon={<GiftOutlined />} style={{ background: '#f1f4f6', color: 'rgba(22,38,46,0.3)' }} />
                     <div>
                       <Text strong style={{ fontSize: 16 }}>{d.toyId?.name || 'Đã xoá'}</Text>
                       <div style={{ fontSize: 13, color: '#7c6e65' }}>Người mượn: {d.borrowerId?.name || '—'} · Chủ: {d.ownerId?.name || '—'}</div>

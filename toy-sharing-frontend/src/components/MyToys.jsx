@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { App, Row, Col, Card, Button, Table, Tag, Typography, Avatar, Flex, Statistic, Spin } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, AppstoreOutlined, SwapOutlined, StarOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, AppstoreOutlined, SwapOutlined, StarOutlined, GiftOutlined } from '@ant-design/icons';
 import ToyFormModal from './ToyFormModal';
 
 const { Title, Text } = Typography;
@@ -81,9 +81,7 @@ export default function MyToys() {
       title: 'Đồ chơi', key: 'toy',
       render: (_, toy) => (
         <Flex align="center" gap={12}>
-          <Avatar shape="square" size={48} src={toy.images?.[0] || undefined} style={{ background: '#f1f4f6' }}>
-            {!toy.images?.[0] && '🧸'}
-          </Avatar>
+          <Avatar shape="square" size={48} src={toy.images?.[0] || undefined} icon={<GiftOutlined />} style={{ background: '#f1f4f6', color: 'rgba(22,38,46,0.3)' }} />
           <Text strong>{toy.name}</Text>
         </Flex>
       ),

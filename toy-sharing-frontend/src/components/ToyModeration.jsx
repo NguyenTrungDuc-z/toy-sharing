@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { App, Row, Col, Card, Segmented, Select, Button, Tag, Statistic, Modal, Descriptions, Empty, Spin, Flex, Typography } from 'antd';
+import { GiftOutlined } from '@ant-design/icons';
 import AdminLayout from './AdminLayout';
 
 const { Text } = Typography;
@@ -69,7 +70,7 @@ export default function ToyModeration({ setPage }) {
                 <Card hoverable styles={{ body: { padding: 14 } }}
                   cover={
                     <div style={{ position: 'relative', aspectRatio: '4/3', background: '#f1f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      {img ? <img src={img} alt={toy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 48 }}>🧸</span>}
+                      {img ? <img src={img} alt={toy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <GiftOutlined style={{ fontSize: 44, color: 'rgba(22,38,46,0.25)' }} />}
                       <Tag color={tabColor[statusTab]} style={{ position: 'absolute', top: 8, left: 8, margin: 0 }}>{tabLabel[statusTab]}</Tag>
                     </div>
                   }
@@ -95,7 +96,7 @@ export default function ToyModeration({ setPage }) {
         {selectedToy && (
           <>
             <div style={{ borderRadius: 12, overflow: 'hidden', marginBottom: 16, aspectRatio: '16/9', background: '#f1f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {selectedToy.images?.[0] ? <img src={selectedToy.images[0]} alt={selectedToy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 64 }}>🧸</span>}
+              {selectedToy.images?.[0] ? <img src={selectedToy.images[0]} alt={selectedToy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <GiftOutlined style={{ fontSize: 56, color: 'rgba(22,38,46,0.25)' }} />}
             </div>
             <Typography.Title level={4} style={{ marginTop: 0 }}>{selectedToy.name}</Typography.Title>
             <Flex gap={8} style={{ marginBottom: 16 }}>

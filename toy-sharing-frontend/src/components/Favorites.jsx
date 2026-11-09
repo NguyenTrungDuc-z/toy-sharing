@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Row, Col, Card, Button, Typography, Empty, Spin, Flex, Alert } from 'antd';
-import { HeartFilled } from '@ant-design/icons';
+import { HeartFilled, GiftOutlined } from '@ant-design/icons';
 
 const API_URL = 'http://localhost:5000';
 const { Title, Text } = Typography;
@@ -56,7 +56,7 @@ export default function Favorites({ setPage, viewToyDetail }) {
                   <div style={{ aspectRatio: '1 / 1', background: '#f1f4f6', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {toy.images?.[0]
                       ? <img src={toy.images[0]} alt={toy.name} onError={e => { e.currentTarget.style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: 48 }}>🧸</span>}
+                      : <GiftOutlined style={{ fontSize: 44, color: 'rgba(22,38,46,0.25)' }} />}
                   </div>
                 }>
                 <div style={{ fontWeight: 600, fontSize: 14, minHeight: 38, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{toy.name}</div>

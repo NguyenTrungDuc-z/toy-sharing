@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, Row, Col, Avatar, Typography, Button, Rate, Tag, Empty, Spin, Flex, Divider, Space } from 'antd';
-import { UserOutlined, ArrowLeftOutlined, StarFilled, AppstoreOutlined } from '@ant-design/icons';
+import { UserOutlined, ArrowLeftOutlined, StarFilled, AppstoreOutlined, GiftOutlined } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
 const MANGO = '#ffb627';
@@ -61,7 +61,7 @@ export default function PublicProfile({ ownerId, setPage, viewToyDetail }) {
               <Card hoverable styles={{ body: { padding: 14 } }} onClick={() => viewToyDetail?.(toy._id)}
                 cover={
                   <div style={{ aspectRatio: '1/1', background: '#f1f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                    {toy.images?.[0] ? <img src={toy.images[0]} alt={toy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 44 }}>🧸</span>}
+                    {toy.images?.[0] ? <img src={toy.images[0]} alt={toy.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <GiftOutlined style={{ fontSize: 40, color: 'rgba(22,38,46,0.25)' }} />}
                   </div>
                 }>
                 <div style={{ fontWeight: 600, fontSize: 14, minHeight: 38, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{toy.name}</div>

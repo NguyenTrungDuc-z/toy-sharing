@@ -5,7 +5,7 @@ import {
   Divider, Empty, Spin, Flex, Alert,
 } from 'antd';
 import {
-  UserOutlined, EnvironmentOutlined, SafetyCertificateOutlined, HomeOutlined,
+  UserOutlined, EnvironmentOutlined, SafetyCertificateOutlined, HomeOutlined, GiftOutlined,
 } from '@ant-design/icons';
 import BorrowRequestModal from './BorrowRequestModal';
 
@@ -85,7 +85,7 @@ export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDeta
             <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--color-border)', background: '#f1f4f6', aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {images.length > 0
                 ? <Image src={images[0]} alt={toy.name} width="100%" height="100%" style={{ objectFit: 'cover' }} />
-                : <span style={{ fontSize: 80 }}>🧸</span>}
+                : <GiftOutlined style={{ fontSize: 72, color: 'rgba(22,38,46,0.25)' }} />}
             </div>
             {images.length > 1 && (
               <Flex gap={10} wrap style={{ marginTop: 12 }}>
@@ -200,7 +200,7 @@ export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDeta
                   onClick={() => { viewToyDetail?.(rel._id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   cover={
                     <div style={{ aspectRatio: '1/1', background: '#f1f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                      {rel.images?.[0] ? <img src={rel.images[0]} alt={rel.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 44 }}>🧸</span>}
+                      {rel.images?.[0] ? <img src={rel.images[0]} alt={rel.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <GiftOutlined style={{ fontSize: 40, color: 'rgba(22,38,46,0.25)' }} />}
                     </div>
                   }>
                   <div style={{ fontWeight: 600, fontSize: 14, minHeight: 38, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{rel.name}</div>

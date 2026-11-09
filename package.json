@@ -1,0 +1,20 @@
+{
+  "name": "toy-sharing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ToyShare - nền tảng chia sẻ đồ chơi (MERN). Scripts chạy cả backend + frontend bằng 1 lệnh.",
+  "scripts": {
+    "install:all": "npm install && npm --prefix toy-sharing-backend install && npm --prefix toy-sharing-frontend install",
+    "seed": "npm --prefix toy-sharing-backend run seed",
+    "seed:fresh": "npm --prefix toy-sharing-backend run seed:fresh",
+    "backend": "npm --prefix toy-sharing-backend run dev",
+    "frontend": "npm --prefix toy-sharing-frontend run dev",
+    "dev": "concurrently -k -n BE,FE -c blue,green \"npm --prefix toy-sharing-backend run dev\" \"npm --prefix toy-sharing-frontend run dev\"",
+    "start": "concurrently -k -n BE,FE -c blue,green \"npm --prefix toy-sharing-backend start\" \"npm --prefix toy-sharing-frontend run dev\"",
+    "test:e2e": "npm --prefix toy-sharing-backend run test:e2e",
+    "cleanup:apply": "npm --prefix toy-sharing-backend run cleanup:apply"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

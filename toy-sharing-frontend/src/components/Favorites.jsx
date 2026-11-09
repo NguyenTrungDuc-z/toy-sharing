@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Row, Col, Card, Button, Typography, Empty, Spin, Flex, Alert } from 'antd';
+import { HeartFilled } from '@ant-design/icons';
 
 const API_URL = 'http://localhost:5000';
+const { Title, Text } = Typography;
 
-export default function Favorites({ setPage }) {
+export default function Favorites({ setPage, viewToyDetail }) {
   const [toys, setToys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -11,64 +14,64 @@ export default function Favorites({ setPage }) {
   useEffect(() => {
     let active = true;
     const token = localStorage.getItem('token');
-    axios.get(`${API_URL}/api/auth/me/favorites`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(response => {
-        if (active) setToys(response.data.favorites || []);
-      })
-      .catch(err => {
-        if (active) setError(err.response?.data?.message || 'Không thể tải danh sách yêu thích.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
+    axios.get(`${API_URL}/api/auth/me/favorites`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => { if (active) setToys(res.data.favorites || []); })
+      .catch(err => { if (active) setError(err.response?.data?.message || 'Không thể tải danh sách yêu thích.'); })
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
 
-  const removeFavorite = async (toyId) => {
+  const removeFavorite = async (toyId, e) => {
+    e?.stopPropagation();
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${API_URL}/api/toys/${toyId}/favorite`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setToys(current => current.filter(toy => toy._id !== toyId));
+      await axios.delete(`${API_URL}/api/toys/${toyId}/favorite`, { headers: { Authorization: `Bearer ${token}` } });
+      setToys(cur => cur.filter(t => t._id !== toyId));
     } catch (err) {
       setError(err.response?.data?.message || 'Không thể xóa đồ chơi khỏi danh sách.');
     }
   };
 
   return (
-    <main style={{ maxWidth: '1120px', margin: '36px auto 60px', padding: '0 20px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'end', gap: '20px', flexWrap: 'wrap', marginBottom: '24px' }}>
-        <div>
-          <p style={{ color: 'var(--primary-color)', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>BỘ SƯU TẬP CỦA BẠN</p>
-          <h1 style={{ fontSize: '30px', color: 'var(--text-main)' }}>Đồ chơi yêu thích</h1>
-        </div>
-        <button type="button" className="btn-secondary" onClick={() => setPage('home')}>Quay lại khám phá</button>
-      </header>
+    <div style={{ maxWidth: 1240, margin: '0 auto', padding: '24px clamp(16px,4vw,24px) 56px' }}>
+      <Flex justify="space-between" align="center" wrap gap={16} style={{ marginBottom: 24 }}>
+        <Title level={3} style={{ margin: 0 }}>Đồ chơi yêu thích</Title>
+        <Button onClick={() => setPage('home')}>Quay lại khám phá</Button>
+      </Flex>
 
-      {error && <p role="status" style={{ padding: '12px 14px', marginBottom: '18px', borderRadius: '8px', background: '#fee2e2', color: '#991b1b' }}>{error}</p>}
-      {loading ? <p style={{ padding: '40px 0', color: 'var(--text-muted)' }}>Đang tải danh sách...</p> : toys.length === 0 ? (
-        <p style={{ padding: '48px 20px', textAlign: 'center', color: 'var(--text-muted)', background: '#fff', border: '1px solid #f1eae4', borderRadius: '10px' }}>Bạn chưa lưu đồ chơi nào.</p>
+      {error && <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />}
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '80px 0' }}><Spin size="large" /></div>
+      ) : toys.length === 0 ? (
+        <Empty description="Bạn chưa lưu đồ chơi nào." style={{ padding: '60px 0' }}>
+          <Button type="primary" onClick={() => setPage('home')}>Khám phá đồ chơi</Button>
+        </Empty>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px' }}>
+        <Row gutter={[16, 20]}>
           {toys.map(toy => (
-            <article key={toy._id} style={{ background: '#fff', border: '1px solid #f1eae4', borderRadius: '8px', overflow: 'hidden' }}>
-              <img src={toy.images?.[0] || '/images/toy-placeholder.png'} alt={toy.name} onError={event => { event.currentTarget.style.display = 'none'; }} style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#f6f1eb' }} />
-              <div style={{ padding: '16px' }}>
-                <h2 style={{ fontSize: '17px', marginBottom: '5px', color: 'var(--text-main)' }}>{toy.name}</h2>
-                <p style={{ minHeight: '40px', color: 'var(--text-muted)', fontSize: '13px' }}>{toy.category || 'Đồ chơi'} · {toy.ownerId?.name || 'Thành viên'}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px' }}>
-                  <span style={{ color: 'var(--primary-color)', fontWeight: 700 }}>{toy.depositRequired?.toLocaleString() || 0}đ</span>
-                  <button type="button" onClick={() => removeFavorite(toy._id)} aria-label={`Bỏ yêu thích ${toy.name}`} title="Bỏ yêu thích" style={{ border: '1px solid #ead8d5', borderRadius: '8px', padding: '8px 10px', color: '#9d3b35', background: '#fff', cursor: 'pointer' }}>♥ Bỏ lưu</button>
-                </div>
-              </div>
-            </article>
+            <Col key={toy._id} xs={12} sm={8} md={6} lg={6} xl={4}>
+              <Card hoverable styles={{ body: { padding: 14 } }} onClick={() => viewToyDetail?.(toy._id)}
+                cover={
+                  <div style={{ aspectRatio: '1 / 1', background: '#f1f4f6', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {toy.images?.[0]
+                      ? <img src={toy.images[0]} alt={toy.name} onError={e => { e.currentTarget.style.display = 'none'; }} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 48 }}>🧸</span>}
+                  </div>
+                }>
+                <div style={{ fontWeight: 600, fontSize: 14, minHeight: 38, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{toy.name}</div>
+                <Text type="secondary" style={{ fontSize: 12, display: 'block', margin: '4px 0 10px' }}>
+                  {toy.category || 'Đồ chơi'} · {toy.ownerId?.name || 'Thành viên'}
+                </Text>
+                <Flex justify="space-between" align="center">
+                  <span style={{ fontWeight: 800, color: 'var(--color-foreground)' }}>{(toy.depositRequired || 0).toLocaleString()}đ</span>
+                  <Button danger size="small" icon={<HeartFilled />} onClick={(e) => removeFavorite(toy._id, e)}>Bỏ lưu</Button>
+                </Flex>
+              </Card>
+            </Col>
           ))}
-        </div>
+        </Row>
       )}
-    </main>
+    </div>
   );
 }

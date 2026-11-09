@@ -4,7 +4,6 @@ const borrowController = require('../controllers/BorrowController');
 const auth = require('../middleware/auth');
 
 router.post('/', auth, borrowController.createRequest);
-router.post('/validate-voucher', borrowController.validateVoucher);
 router.get('/history', auth, borrowController.getBorrowHistory);
 
 router.get('/my-borrows', auth, borrowController.getMyBorrows);

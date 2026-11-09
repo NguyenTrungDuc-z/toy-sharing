@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Modal, Descriptions, Button, Spin, Alert, Typography, Flex } from 'antd';
+import { Modal, Descriptions, Button, Spin, Alert, Typography, Flex, Input } from 'antd';
+import { TagOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
 
@@ -9,23 +10,45 @@ export default function DepositModal({ isOpen, onClose, borrowRequest, showToast
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [reporting, setReporting] = useState(false);
+  const [voucherCode, setVoucherCode] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [voucherInfo, setVoucherInfo] = useState(null); // { code, discount }
+
+  const token = localStorage.getItem('token');
+
+  const loadQR = useCallback(async () => {
+    if (!borrowRequest?._id) return;
+    setLoading(true); setError('');
+    try {
+      const res = await axios.get(`http://localhost:5000/api/deposits/${borrowRequest._id}/qr`, { headers: { Authorization: `Bearer ${token}` } });
+      setQrData(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Không tải được mã thanh toán.');
+    } finally { setLoading(false); }
+  }, [borrowRequest, token]);
 
   useEffect(() => {
     if (!isOpen || !borrowRequest?._id) return;
-    let active = true;
-    setLoading(true); setError('');
-    const token = localStorage.getItem('token');
-    axios.get(`http://localhost:5000/api/deposits/${borrowRequest._id}/qr`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => { if (active) setQrData(res.data); })
-      .catch(err => { if (active) setError(err.response?.data?.message || 'Không tải được mã thanh toán.'); })
-      .finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [isOpen, borrowRequest]);
+    setVoucherCode(''); setVoucherInfo(null);
+    loadQR();
+  }, [isOpen, borrowRequest, loadQR]);
+
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) { showToast('Vui lòng nhập mã giảm cọc!', 'error'); return; }
+    setApplying(true);
+    try {
+      const res = await axios.post(`http://localhost:5000/api/vouchers/apply/${borrowRequest._id}`, { code: voucherCode.trim() }, { headers: { Authorization: `Bearer ${token}` } });
+      setVoucherInfo({ code: voucherCode.trim().toUpperCase(), discount: res.data.discount });
+      showToast(res.data.message || 'Đã áp dụng mã giảm cọc!', 'success');
+      await loadQR(); // tải lại QR với số cọc đã giảm
+    } catch (err) {
+      showToast(err.response?.data?.message || 'Không áp dụng được mã!', 'error');
+    } finally { setApplying(false); }
+  };
 
   const handleReportPaid = async () => {
     setReporting(true);
     try {
-      const token = localStorage.getItem('token');
       const res = await axios.post(`http://localhost:5000/api/deposits/${borrowRequest._id}/report-paid`, {}, { headers: { Authorization: `Bearer ${token}` } });
       showToast(res.data.message || 'Đã báo chuyển cọc!', 'success');
       onSuccess?.();
@@ -37,6 +60,7 @@ export default function DepositModal({ isOpen, onClose, borrowRequest, showToast
 
   if (!borrowRequest) return null;
   const alreadyReported = qrData?.depositStatus === 'awaiting_confirmation';
+  const canUseVoucher = !alreadyReported && qrData?.depositStatus === 'pending' && !voucherInfo;
 
   return (
     <Modal open={isOpen} onCancel={onClose} footer={null} title="Thanh toán tiền cọc" width={440}>
@@ -49,6 +73,19 @@ export default function DepositModal({ isOpen, onClose, borrowRequest, showToast
           <Text type="secondary" style={{ display: 'block', textAlign: 'center', marginBottom: 16 }}>
             Quét mã VietQR bằng app ngân hàng để chuyển cọc vào tài khoản <strong>ký quỹ của ToyShare</strong>.
           </Text>
+
+          {canUseVoucher && (
+            <Flex gap={8} style={{ marginBottom: 14 }}>
+              <Input prefix={<TagOutlined />} placeholder="Mã giảm cọc (nếu có)" value={voucherCode}
+                onChange={e => setVoucherCode(e.target.value.toUpperCase())} onPressEnter={handleApplyVoucher} />
+              <Button onClick={handleApplyVoucher} loading={applying}>Áp dụng</Button>
+            </Flex>
+          )}
+          {voucherInfo && (
+            <Alert type="success" showIcon style={{ marginBottom: 14 }}
+              message={`Đã áp mã ${voucherInfo.code} — giảm ${(voucherInfo.discount || 0).toLocaleString()}đ tiền cọc.`} />
+          )}
+
           {qrData?.qrUrl && (
             <Flex justify="center" style={{ marginBottom: 16 }}>
               <img src={qrData.qrUrl} alt="VietQR" style={{ width: 240, border: '1px solid var(--color-border)', borderRadius: 12 }} />

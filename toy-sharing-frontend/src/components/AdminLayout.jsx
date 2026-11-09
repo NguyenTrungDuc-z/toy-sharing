@@ -2,6 +2,7 @@ import React from 'react';
 import { Layout, Menu, Typography } from 'antd';
 import {
   DashboardOutlined, TeamOutlined, AuditOutlined, FlagOutlined, SwapOutlined, WalletOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 
 const { Sider, Content } = Layout;
@@ -13,6 +14,7 @@ const items = [
   { key: 'admin-reports', icon: <FlagOutlined />, label: 'Báo cáo vi phạm' },
   { key: 'admin-borrows', icon: <SwapOutlined />, label: 'Quản lý lượt mượn' },
   { key: 'admin-deposits', icon: <WalletOutlined />, label: 'Quản lý tiền cọc' },
+  { key: 'admin-vouchers', icon: <TagsOutlined />, label: 'Mã giảm cọc' },
 ];
 
 export default function AdminLayout({ active, setPage, title, extra, children }) {

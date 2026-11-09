@@ -19,6 +19,7 @@ import ToyDetail from './components/ToyDetail';
 import PublicProfile from './components/PublicProfile';
 import AdminBorrows from './components/AdminBorrows';
 import AdminDeposits from './components/AdminDeposits';
+import VoucherManagement from './components/VoucherManagement';
 import ForgotPassword from './components/ForgotPassword';
 
 export default function App() {
@@ -201,6 +202,10 @@ export default function App() {
 
         {page === 'admin-deposits' && user?.role === 'admin' && (
           <AdminDeposits setPage={navigateTo} />
+        )}
+
+        {page === 'admin-vouchers' && user?.role === 'admin' && (
+          <VoucherManagement setPage={navigateTo} />
         )}
 
       </Layout.Content>

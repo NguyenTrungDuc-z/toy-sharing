@@ -105,6 +105,9 @@ app.use('/api/messages', require('./routes/messageRoutes'));
 // Tuyến đường quản lý tiền cọc (escrow qua VietQR)
 app.use('/api/deposits', require('./routes/depositRoutes'));
 
+// Tuyến đường voucher giảm tiền cọc
+app.use('/api/vouchers', require('./routes/voucherRoutes'));
+
 app.get('/', (req, res) => {
     res.send('API is running...');
 });

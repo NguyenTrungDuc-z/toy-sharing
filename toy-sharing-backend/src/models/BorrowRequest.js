@@ -15,6 +15,9 @@ const borrowRequestSchema = new mongoose.Schema({
     default: 'pending'
   },
   depositAmount: { type: Number, default: 0 },
+  // Voucher giảm tiền cọc (thật): lưu mã + số tiền đã giảm so với cọc gốc của đồ chơi
+  voucherCode: { type: String },
+  voucherDiscount: { type: Number, default: 0 },
   depositPaidReportedDate: { type: Date },
   depositConfirmedDate: { type: Date },
   depositRefundAmount: { type: Number },

@@ -11,6 +11,7 @@ const voucherSchema = new mongoose.Schema({
   maxDiscount: { type: Number, default: 0 },       // trần giảm khi theo %; 0 = không giới hạn
   minDeposit: { type: Number, default: 0 },         // cọc tối thiểu để áp dụng
   usageLimit: { type: Number, default: 0 },         // tổng số lượt dùng; 0 = không giới hạn
+  usagePerUser: { type: Number, default: 0 },       // số lượt tối đa mỗi người; 0 = không giới hạn
   usedCount: { type: Number, default: 0 },
   expiresAt: { type: Date },
   active: { type: Boolean, default: true },

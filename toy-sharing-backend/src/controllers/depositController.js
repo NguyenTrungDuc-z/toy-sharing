@@ -196,9 +196,11 @@ exports.refundFull = async (req, res) => {
         request.depositDeductAmount = 0;
         request.depositResolvedDate = new Date();
         request.depositResolveNote = 'Hoàn cọc đầy đủ';
-        // Nếu đơn vẫn 'approved' (chủ chưa giao đồ) mà hoàn cọc -> huỷ đơn
+        // Nếu đơn vẫn 'approved' (chủ chưa giao đồ) mà hoàn cọc -> huỷ đơn & giải phóng lượt voucher
         if (request.status === 'approved') {
             request.status = 'cancelled';
+            const { releaseVoucher } = require('./voucherController');
+            await releaseVoucher(request, { restoreDeposit: false });
         }
         await request.save();
 
@@ -238,17 +240,25 @@ exports.resolveDamage = async (req, res) => {
             return res.status(400).json({ message: 'Trạng thái đơn không hợp lệ để xử lý khiếu nại!' });
         }
 
-        const deposit = request.depositAmount || 0;
+        // Cọc người mượn thực đóng (đã giảm nếu dùng voucher) và cọc GỐC của đồ chơi.
+        // Trần đền bù cho chủ tính theo cọc GỐC: phần được voucher giảm do NỀN TẢNG bảo trợ,
+        // nên voucher KHÔNG làm giảm mức bảo vệ của chủ đồ chơi.
+        const paidDeposit = request.depositAmount || 0;
+        const originalDeposit = paidDeposit + (request.voucherDiscount || 0);
         const deduct = Number(deductAmount);
-        if (isNaN(deduct) || deduct < 0 || deduct > deposit) {
-            return res.status(400).json({ message: `Số tiền trừ phải từ 0 đến ${deposit.toLocaleString()}đ!` });
+        if (isNaN(deduct) || deduct < 0 || deduct > originalDeposit) {
+            return res.status(400).json({ message: `Số tiền trừ phải từ 0 đến ${originalDeposit.toLocaleString()}đ!` });
         }
 
-        const refund = deposit - deduct;
-        request.depositStatus = deduct === 0 ? 'refunded' : 'partially_refunded';
+        // Người mượn chỉ mất tối đa phần họ đã đóng; phần vượt quá do nền tảng bù cho chủ.
+        const borrowerRefund = Math.max(0, paidDeposit - deduct);
+        const platformCoverage = Math.max(0, deduct - paidDeposit);
+        request.depositStatus = borrowerRefund === paidDeposit ? 'refunded' : 'partially_refunded';
         request.depositDeductAmount = deduct;
-        request.depositRefundAmount = refund;
-        request.depositResolveNote = note ? note.trim() : (deduct === 0 ? 'Admin phân xử: hoàn đủ cho người mượn' : `Trừ ${deduct.toLocaleString()}đ đền chủ đồ chơi`);
+        request.depositRefundAmount = borrowerRefund;
+        request.depositResolveNote = note ? note.trim()
+            : (deduct === 0 ? 'Admin phân xử: hoàn đủ cho người mượn' : `Trừ ${deduct.toLocaleString()}đ đền chủ đồ chơi`)
+              + (platformCoverage > 0 ? ` (nền tảng bảo trợ ${platformCoverage.toLocaleString()}đ do voucher giảm cọc)` : '');
         request.depositResolvedDate = new Date();
         request.damageClaimStatus = 'resolved';
         await request.save();
@@ -268,13 +278,13 @@ exports.resolveDamage = async (req, res) => {
             type: 'return_confirmed',
             title: deduct === 0 ? 'Khiếu nại được giải quyết - Hoàn đủ cọc' : 'Hoàn cọc một phần',
             message: deduct === 0
-                ? `Admin đã phân xử và hoàn lại ĐỦ ${refund.toLocaleString()}đ tiền cọc "${request.toyId?.name || 'đồ chơi'}" cho bạn.`
-                : `Admin đã trừ ${deduct.toLocaleString()}đ tiền đền, hoàn lại ${refund.toLocaleString()}đ cho bạn.`,
+                ? `Admin đã phân xử và hoàn lại ĐỦ ${borrowerRefund.toLocaleString()}đ tiền cọc "${request.toyId?.name || 'đồ chơi'}" cho bạn.`
+                : `Admin đã trừ ${deduct.toLocaleString()}đ tiền đền, hoàn lại ${borrowerRefund.toLocaleString()}đ cho bạn.`,
             link: 'requests',
             relatedId: request._id
         });
 
-        res.json({ message: deduct === 0 ? `Đã hoàn đủ ${refund.toLocaleString()}đ cho người mượn.` : `Đã trừ ${deduct.toLocaleString()}đ đền chủ, hoàn ${refund.toLocaleString()}đ cho người mượn.`, data: request });
+        res.json({ message: deduct === 0 ? `Đã hoàn đủ ${borrowerRefund.toLocaleString()}đ cho người mượn.` : `Đã trừ ${deduct.toLocaleString()}đ đền chủ, hoàn ${borrowerRefund.toLocaleString()}đ cho người mượn.`, data: request });
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }

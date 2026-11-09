@@ -4,6 +4,8 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const User = require('./models/User');
 const bcrypt = require('bcryptjs');
@@ -42,36 +44,51 @@ io.on('connection', (socket) => {
     });
 });
 
+// Bảo mật header (cho phép tài nguyên cross-origin vì ảnh base64/VietQR)
+app.use(helmet({ crossOriginResourcePolicy: false, contentSecurityPolicy: false }));
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Giới hạn tần suất cho nhóm đăng nhập/đăng ký/quên mật khẩu để chống dò mật khẩu
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Bạn thao tác quá nhiều lần. Vui lòng thử lại sau ít phút.' }
+});
+app.use(['/api/auth/login', '/api/auth/register', '/api/auth/forgot-password', '/api/auth/reset-password'], authLimiter);
+
 
 async function createAdminAccount() {
     try {
-        const existing = await User.findOne({ email: 'admin@toyshare.com' });
+        const adminLookup = process.env.ADMIN_EMAIL || 'admin@toyshare.com';
+        const existing = await User.findOne({ email: adminLookup });
         if (existing) {
             if (existing.role !== 'admin') {
                 existing.role = 'admin';
                 await existing.save();
             }
-            console.log('Admin account already exists (admin@toyshare.com)');
+            console.log(`Admin account already exists (${adminLookup})`);
             return;
         }
 
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@toyshare.com';
+        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
         const salt = await bcrypt.genSalt(10);
-        const hashedAdminPassword = await bcrypt.hash('admin123', salt);
+        const hashedAdminPassword = await bcrypt.hash(adminPassword, salt);
 
         await User.create({
             name: 'Hệ thống Admin',
-            email: 'admin@toyshare.com',
+            email: adminEmail,
             passwordHash: hashedAdminPassword,
             phone: '0123456789',
             address: 'Hà Nội',
             role: 'admin',
             status: 'active'
         });
-        console.log('Admin account created (admin@toyshare.com / admin123)');
+        console.log(`Admin account created (${adminEmail}). Mật khẩu lấy từ ADMIN_PASSWORD trong .env (mặc định tạm nếu chưa đặt).`);
     } catch (err) {
         console.error('Error creating admin account:', err.message);
     }

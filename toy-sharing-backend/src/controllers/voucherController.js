@@ -24,7 +24,7 @@ exports.listVouchers = async (req, res) => {
 
 exports.createVoucher = async (req, res) => {
   try {
-    const { code, description, discountType, discountValue, maxDiscount, minDeposit, usageLimit, expiresAt, active } = req.body;
+    const { code, description, discountType, discountValue, maxDiscount, minDeposit, usageLimit, usagePerUser, expiresAt, active } = req.body;
     if (!code || !code.trim()) return res.status(400).json({ message: 'Vui lòng nhập mã voucher!' });
     const value = Number(discountValue);
     if (isNaN(value) || value <= 0) return res.status(400).json({ message: 'Giá trị giảm phải lớn hơn 0!' });
@@ -41,6 +41,7 @@ exports.createVoucher = async (req, res) => {
       maxDiscount: Number(maxDiscount) || 0,
       minDeposit: Number(minDeposit) || 0,
       usageLimit: Number(usageLimit) || 0,
+      usagePerUser: Number(usagePerUser) || 0,
       expiresAt: expiresAt || null,
       active: active !== false,
       createdBy: req.userId
@@ -55,7 +56,7 @@ exports.updateVoucher = async (req, res) => {
   try {
     const { id } = req.params;
     if (!mongoose.isValidObjectId(id)) return res.status(400).json({ message: 'Mã voucher không hợp lệ!' });
-    const allowed = ['description', 'discountType', 'discountValue', 'maxDiscount', 'minDeposit', 'usageLimit', 'expiresAt', 'active'];
+    const allowed = ['description', 'discountType', 'discountValue', 'maxDiscount', 'minDeposit', 'usageLimit', 'usagePerUser', 'expiresAt', 'active'];
     const update = {};
     for (const k of allowed) if (k in req.body) update[k] = req.body[k];
     const voucher = await Voucher.findByIdAndUpdate(id, update, { new: true });
@@ -112,9 +113,24 @@ exports.applyVoucher = async (req, res) => {
     if (request.voucherCode) return res.status(400).json({ message: `Đơn đã áp dụng mã "${request.voucherCode}" rồi!` });
 
     const baseDeposit = request.depositAmount || 0;
-    const voucher = await Voucher.findOne({ code: (code || '').trim().toUpperCase() });
+    const normalized = (code || '').trim().toUpperCase();
+    const voucher = await Voucher.findOne({ code: normalized });
     const err = checkUsable(voucher, baseDeposit);
     if (err) return res.status(400).json({ message: err });
+
+    // Giới hạn số lượt mỗi người (đếm đơn còn đang giữ mã này của chính họ)
+    if (voucher.usagePerUser && voucher.usagePerUser > 0) {
+      const usedByUser = await BorrowRequest.countDocuments({ voucherCode: voucher.code, borrowerId: req.userId });
+      if (usedByUser >= voucher.usagePerUser) {
+        return res.status(400).json({ message: `Bạn đã dùng mã này tối đa ${voucher.usagePerUser} lần!` });
+      }
+    }
+
+    // Tăng lượt dùng ATOMIC: chỉ tăng khi còn lượt (tránh vượt usageLimit khi nhiều người bấm cùng lúc)
+    const incCondition = { _id: voucher._id, active: true };
+    if (voucher.usageLimit && voucher.usageLimit > 0) incCondition.usedCount = { $lt: voucher.usageLimit };
+    const claimed = await Voucher.findOneAndUpdate(incCondition, { $inc: { usedCount: 1 } }, { new: true });
+    if (!claimed) return res.status(400).json({ message: 'Mã giảm cọc đã hết lượt sử dụng!' });
 
     const discount = voucher.computeDiscount(baseDeposit);
     request.depositAmount = baseDeposit - discount;
@@ -122,11 +138,26 @@ exports.applyVoucher = async (req, res) => {
     request.voucherDiscount = discount;
     await request.save();
 
-    voucher.usedCount += 1;
-    await voucher.save();
-
     res.json({ success: true, message: `Đã áp dụng mã ${voucher.code}, giảm ${discount.toLocaleString()}đ tiền cọc!`, discount, newDeposit: request.depositAmount });
   } catch (err) {
     res.status(500).json({ message: 'Lỗi áp dụng voucher', error: err.message });
+  }
+};
+
+// Hoàn lại lượt dùng voucher khi đơn không thành (huỷ/từ chối/hoàn cọc trước khi mượn).
+// Trả lại cọc gốc cho đơn để dữ liệu nhất quán. Gọi nội bộ từ BorrowController/depositController.
+exports.releaseVoucher = async (request, { restoreDeposit = true } = {}) => {
+  try {
+    if (!request || !request.voucherCode) return;
+    await Voucher.updateOne({ code: request.voucherCode, usedCount: { $gt: 0 } }, { $inc: { usedCount: -1 } });
+    // restoreDeposit: khi đơn chưa đóng cọc (huỷ trước khi trả tiền) -> trả cọc gốc để nhất quán.
+    // Khi đã đóng/hoàn cọc rồi thì giữ nguyên số liệu tiền, chỉ giải phóng lượt voucher.
+    if (restoreDeposit) {
+      request.depositAmount = (request.depositAmount || 0) + (request.voucherDiscount || 0);
+      request.voucherDiscount = 0;
+    }
+    request.voucherCode = undefined;
+  } catch (err) {
+    console.error('[VOUCHER] Lỗi hoàn lượt voucher:', err.message);
   }
 };

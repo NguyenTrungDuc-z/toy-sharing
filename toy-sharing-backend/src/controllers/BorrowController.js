@@ -176,6 +176,8 @@ exports.confirmReturnAndRefund = async (req, res) => {
 
     const escrowHeld = request.depositStatus === 'held';
     const depositAmount = request.depositAmount || 0;
+    // Trần đền bù theo cọc GỐC (phần voucher giảm do nền tảng bảo trợ)
+    const originalDeposit = depositAmount + (request.voucherDiscount || 0);
     const isDamaged = condition === 'damaged';
     const isLost = condition === 'lost';
 
@@ -192,7 +194,7 @@ exports.confirmReturnAndRefund = async (req, res) => {
       request.damageReported = true;
       request.damageImages = sanitizeImages(req.body.images);
       request.damageNote = note ? String(note).trim() : 'Người mượn không trả đồ (mất đồ)';
-      request.damageAmountRequested = depositAmount;
+      request.damageAmountRequested = originalDeposit;
       request.damageClaimDate = new Date();
     }
 
@@ -206,8 +208,8 @@ exports.confirmReturnAndRefund = async (req, res) => {
         return res.status(400).json({ message: 'Vui lòng tải ít nhất 1 ảnh bằng chứng hư hỏng!' });
       }
       const numAmount = Number(amount);
-      if (!numAmount || numAmount <= 0 || numAmount > depositAmount) {
-        return res.status(400).json({ message: `Số tiền đền phải từ 1 đến ${depositAmount.toLocaleString()}đ!` });
+      if (!numAmount || numAmount <= 0 || numAmount > originalDeposit) {
+        return res.status(400).json({ message: `Số tiền đền phải từ 1 đến ${originalDeposit.toLocaleString()}đ!` });
       }
       request.damageClaimStatus = 'claimed';
       request.damageReported = true;
@@ -471,6 +473,16 @@ exports.approveRequest = async (req, res) => {
       return res.status(400).json({ message: 'Chỉ có thể duyệt yêu cầu ở trạng thái pending!' });
     }
 
+    // Chống trùng lịch: không duyệt nếu đồ chơi đã có đơn khác đang xử lý
+    // (đã duyệt / đang mượn / quá hạn). Tránh tồn tại 2 đơn 'approved' song song.
+    const activeOther = await BorrowRequest.findOne({
+      toyId: request.toyId, _id: { $ne: request._id },
+      status: { $in: ['approved', 'borrowing', 'overdue'] }
+    });
+    if (activeOther) {
+      return res.status(400).json({ message: 'Đồ chơi này đang có một lượt mượn khác được xử lý. Vui lòng chờ hoàn tất trước khi duyệt đơn mới!' });
+    }
+
     request.status = 'approved';
     request.approvedDate = new Date();
     await request.save();
@@ -566,9 +578,15 @@ exports.cancelRequest = async (req, res) => {
       return res.status(403).json({ message: 'Chỉ người gửi yêu cầu mới được huỷ!' });
     }
 
-    if (request.status !== 'pending') {
-      return res.status(400).json({ message: 'Chỉ có thể huỷ yêu cầu đang ở trạng thái chờ duyệt!' });
+    // Cho huỷ khi: còn chờ duyệt, HOẶC đã duyệt nhưng CHƯA đóng cọc (depositStatus pending)
+    const canCancelApproved = request.status === 'approved' && request.depositStatus === 'pending';
+    if (request.status !== 'pending' && !canCancelApproved) {
+      return res.status(400).json({ message: 'Chỉ huỷ được khi đơn đang chờ duyệt, hoặc đã duyệt nhưng chưa đóng cọc!' });
     }
+
+    // Nếu đơn đã áp voucher mà huỷ trước khi đóng cọc -> hoàn lại lượt dùng voucher
+    const { releaseVoucher } = require('./voucherController');
+    await releaseVoucher(request);
 
     request.status = 'cancelled';
     await request.save();
@@ -709,6 +727,8 @@ exports.approveExtension = async (req, res) => {
     // Cập nhật ngày hạn trả chính thức thành ngày gia hạn mới
     borrowRequest.dueDate = borrowRequest.extensionDueDate;
     borrowRequest.extensionStatus = 'approved';
+    // Reset cờ nhắc hạn để lượt đã gia hạn vẫn được nhắc trước hạn mới
+    borrowRequest.dueSoonNotified = false;
     await borrowRequest.save();
 
     const apprExtToy = await Toy.findById(borrowRequest.toyId).select('name');

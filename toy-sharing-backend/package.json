@@ -4,7 +4,10 @@
   "main": "src/App.js",
   "scripts": {
     "start": "node src/App.js",
-    "dev": "nodemon src/App.js"
+    "dev": "nodemon src/App.js",
+    "test:e2e": "node tests/escrow-e2e.mjs && node tests/voucher-review-e2e.mjs && node tests/fixes-e2e.mjs",
+    "cleanup": "node scripts/cleanup-testdata.js",
+    "cleanup:apply": "node scripts/cleanup-testdata.js apply"
   },
   "keywords": [],
   "author": "",
@@ -15,7 +18,9 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.3",
     "google-auth-library": "^11.3.3",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.7.4",
     "nodemailer": "^10.4.0",

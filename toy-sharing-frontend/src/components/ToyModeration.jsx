@@ -21,8 +21,10 @@ export default function ToyModeration({ setPage }) {
   const fetchToys = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem('token');
       const res = await axios.get('http://localhost:5000/api/auth/admin/toys', {
-        params: { status: statusTab, category: categoryFilter }
+        params: { status: statusTab, category: categoryFilter },
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       // Mảng MockData chuẩn hóa lại cấu trúc trường (name, ownerId, imageUrl) trùng khớp Database
@@ -55,7 +57,10 @@ export default function ToyModeration({ setPage }) {
   // 🛡️ 2. XỬ LÝ PHÊ DUYỆT / TỪ CHỐI TRỰC TIẾP
   const handleAction = async (id, action) => {
     try {
-      const res = await axios.put(`http://localhost:5000/api/auth/admin/toys/${id}/status`, { status: action });
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`http://localhost:5000/api/auth/admin/toys/${id}/status`, { status: action }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (res.data.success) {
         showToast(action === 'approved' ? '🎉 Đã phê duyệt bài đăng thành công!' : '❌ Đã từ chối bài đăng!', 'success');
         fetchToys(); 

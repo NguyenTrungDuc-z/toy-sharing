@@ -71,6 +71,10 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: 'Email hoặc mật khẩu không chính xác!' });
         }
 
+        if (user.status === 'blocked') {
+            return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!' });
+        }
+
         // Generate JWT token
         const token = jwt.sign(
             { userId: user._id, tokenVersion: user.tokenVersion || 0 },

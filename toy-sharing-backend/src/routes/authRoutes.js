@@ -18,15 +18,22 @@ router.post('/logout', auth, authController.logout);
 // ==========================================
 // 2. CÁC TUYẾN ĐƯỜNG QUẢN TRỊ VIÊN (Admin)
 // ==========================================
+const adminOnly = (req, res, next) => {
+    if (req.authenticatedUser?.role !== 'admin') {
+        return res.status(403).json({ message: 'Chỉ admin mới có quyền truy cập!' });
+    }
+    next();
+};
+
 // Lấy số liệu thống kê động cho Dashboard
-router.get('/admin/stats', adminController.getStats);
+router.get('/admin/stats', auth, adminOnly, adminController.getStats);
 
 // Phân quyền & danh sách người dùng
-router.get('/admin/users', adminController.getUsers);
-router.put('/admin/users/:userId', adminController.updateUser);
+router.get('/admin/users', auth, adminOnly, adminController.getUsers);
+router.put('/admin/users/:userId', auth, adminOnly, adminController.updateUser);
 
 // Kiểm duyệt bài đăng đồ chơi
-router.get('/admin/toys', adminController.getToys);
-router.put('/admin/toys/:id/status', adminController.updateToyStatus);
+router.get('/admin/toys', auth, adminOnly, adminController.getToys);
+router.put('/admin/toys/:id/status', auth, adminOnly, adminController.updateToyStatus);
 
 module.exports = router;

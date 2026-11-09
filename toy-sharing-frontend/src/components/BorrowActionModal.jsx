@@ -42,11 +42,10 @@ export default function BorrowActionModal({ isOpen, onClose, item, onSuccess, sh
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
       const res = await axios.patch(
         `http://localhost:5000/api/borrows/${item._id}/request-extension`,
-        { newDueDate, reason: note.trim(), userId },
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        { newDueDate, reason: note.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       showToast?.('🎉 Đã gửi yêu cầu mượn thêm! Vui lòng chờ chủ đồ duyệt.', 'success');
@@ -65,11 +64,10 @@ export default function BorrowActionModal({ isOpen, onClose, item, onSuccess, sh
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
       const res = await axios.patch(
         `http://localhost:5000/api/borrows/${item._id}/report-return`,
-        { returnType, note: note.trim(), userId },
-        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+        { returnType, note: note.trim() },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       showToast?.(res.data.message || 'Đã gửi thông báo trả đồ thành công!', 'success');

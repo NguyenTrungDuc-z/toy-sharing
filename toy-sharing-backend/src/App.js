@@ -14,39 +14,41 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Helper map condition từ frontend sang schema backend enum ['new', 'used']
-const mapCondition = (cond) => {
-    if (!cond) return 'used';
-    const c = cond.toLowerCase();
-    if (c.includes('mới') || c.includes('new')) return 'new';
-    return 'used';
-};
 
-// Hàm khởi tạo tài khoản Admin mặc định hệ thống với mật khẩu băm bcrypt
 async function createAdminAccount() {
     try {
+        const existing = await User.findOne({ email: 'admin@toyshare.com' });
+        if (existing) {
+            if (existing.role !== 'admin') {
+                existing.role = 'admin';
+                await existing.save();
+            }
+            console.log('Admin account already exists (admin@toyshare.com)');
+            return;
+        }
+
         const salt = await bcrypt.genSalt(10);
         const hashedAdminPassword = await bcrypt.hash('admin123', salt);
 
-        await User.deleteOne({ email: 'admin@toyshare.com' });
         await User.create({
             name: 'Hệ thống Admin',
             email: 'admin@toyshare.com',
             passwordHash: hashedAdminPassword,
             phone: '0123456789',
             address: 'Hà Nội',
-            role: 'admin' 
+            role: 'admin',
+            status: 'active'
         });
-        console.log('🚀 Đã khởi tạo lại tài khoản Admin với mật khẩu băm bcrypt bảo mật! (admin@toyshare.com / admin123)');
+        console.log('Admin account created (admin@toyshare.com / admin123)');
     } catch (err) {
-        console.error('❌ Lỗi trong quá trình khởi tạo tài khoản Admin:', err.message);
+        console.error('Error creating admin account:', err.message);
     }
 }
 
 // ==================== ROUTERS VÀ API CHỨC NĂNG ====================
 
 // Tuyến đường xử lý mượn trả trả kết quả thành công (201 Created)
-app.use('/api/borrows', require('./routes/borrowRoutes'));
+app.use('/api/borrows', require('./routes/BorrowRoutes'));
 
 // Tuyến đường xử lý Auth (Đăng ký / Đăng nhập) và quản trị
 app.use('/api/auth', require('./routes/authRoutes'));

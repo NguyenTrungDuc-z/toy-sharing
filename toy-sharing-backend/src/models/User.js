@@ -14,10 +14,15 @@ const userSchema = new mongoose.Schema({
     count: { type: Number, default: 0 }
   },
  
-  role: { 
-    type: String, 
-    enum: ['user', 'admin'], 
-    default: 'user' 
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    default: 'user'
+  },
+  status: {
+    type: String,
+    enum: ['active', 'blocked'],
+    default: 'active'
   }
 }, { timestamps: true });
 

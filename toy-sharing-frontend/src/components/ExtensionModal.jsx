@@ -39,16 +39,14 @@ export default function ExtensionModal({ isOpen, onClose, item, onSuccess, showT
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const userId = localStorage.getItem('userId');
       const res = await axios.patch(
         `http://localhost:5000/api/borrows/${item._id}/request-extension`,
         {
           newDueDate,
-          reason: reason.trim(),
-          userId
+          reason: reason.trim()
         },
         {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+          headers: { Authorization: `Bearer ${token}` }
         }
       );
 

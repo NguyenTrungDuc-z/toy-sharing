@@ -19,8 +19,10 @@ export default function RoleManagement({ setPage }) {
  
   const fetchUserData = async () => {
     try {
+      const token = localStorage.getItem('token');
       const res = await axios.get('http://localhost:5000/api/auth/admin/users', {
-        params: { search: search, role: roleFilter }
+        params: { search: search, role: roleFilter },
+        headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
         setUsers(res.data.users);
@@ -53,7 +55,10 @@ export default function RoleManagement({ setPage }) {
       return;
     }
     try {
-      const res = await axios.put(`http://localhost:5000/api/auth/admin/users/${userId}`, { role: newRole });
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`http://localhost:5000/api/auth/admin/users/${userId}`, { role: newRole }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       if (res.data.success || res.status === 200) {
         showToast(`Cập nhật quyền thành viên thành ${newRole === 'admin' ? 'Quản trị viên' : 'Người dùng'} thành công!`, 'success');
         fetchUserData();
@@ -75,7 +80,10 @@ export default function RoleManagement({ setPage }) {
     }
 
     try {
-      const res = await axios.put(`http://localhost:5000/api/auth/admin/users/${userId}`, { status: newStatus });
+      const token = localStorage.getItem('token');
+      const res = await axios.put(`http://localhost:5000/api/auth/admin/users/${userId}`, { status: newStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
        if (res.data.success || res.status === 200) {
          showToast(`${actionText} tài khoản thành công!`, 'success');
          fetchUserData(); // 🔄 Tải lại danh sách mới nhất từ DB

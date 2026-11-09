@@ -27,11 +27,13 @@ export default function BorrowRequestModal({ isOpen, onClose, toy, user, onBorro
 
     setIsSubmitting(true);
     try {
+      const token = localStorage.getItem('token');
       const response = await axios.post('http://localhost:5000/api/borrows', {
         toyId: toy._id,
-        borrowerId: user.id || user._id,
         dueDate: new Date(formData.toDate).toISOString(),
         note: formData.note
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       showToast(response.data.message || "Gửi yêu cầu mượn thành công!", 'success');
       onBorrowSuccess();

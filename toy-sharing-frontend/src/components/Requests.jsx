@@ -46,10 +46,12 @@ export default function Requests() {
         return;
       }
 
+      const token = localStorage.getItem('token');
+      const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
       const [incomingRes, myBorrowsRes, historyRes] = await Promise.all([
-        axios.get(`http://localhost:5000/api/borrows/incoming-requests?userId=${userId}`),
-        axios.get(`http://localhost:5000/api/borrows/my-borrows?userId=${userId}`),
-        axios.get(`http://localhost:5000/api/borrows/user-history?userId=${userId}`),
+        axios.get('http://localhost:5000/api/borrows/incoming-requests', authHeaders),
+        axios.get('http://localhost:5000/api/borrows/my-borrows', authHeaders),
+        axios.get('http://localhost:5000/api/borrows/user-history', authHeaders),
       ]);
 
       setIncomingRequests(incomingRes.data || []);
@@ -81,14 +83,16 @@ export default function Requests() {
 
   const refreshCurrentTab = async () => {
     if (!userId) return;
+    const token = localStorage.getItem('token');
+    const authHeaders = { headers: { Authorization: `Bearer ${token}` } };
     if (activeTab === 'incoming') {
-      const res = await axios.get(`http://localhost:5000/api/borrows/incoming-requests?userId=${userId}`);
+      const res = await axios.get('http://localhost:5000/api/borrows/incoming-requests', authHeaders);
       setIncomingRequests(res.data || []);
     } else if (activeTab === 'borrowing') {
-      const res = await axios.get(`http://localhost:5000/api/borrows/my-borrows?userId=${userId}`);
+      const res = await axios.get('http://localhost:5000/api/borrows/my-borrows', authHeaders);
       setMyBorrows(res.data || []);
     } else {
-      const res = await axios.get(`http://localhost:5000/api/borrows/user-history?userId=${userId}`);
+      const res = await axios.get('http://localhost:5000/api/borrows/user-history', authHeaders);
       setUserHistory(res.data || []);
     }
   };
@@ -124,7 +128,8 @@ export default function Requests() {
    const handleApproveRequest = async (requestId) => {
      setActionLoading(true);
      try {
-       await axios.put(`http://localhost:5000/api/borrows/${requestId}/approve`, {}, { headers: { 'x-user-id': userId } });
+       const token = localStorage.getItem('token');
+       await axios.put(`http://localhost:5000/api/borrows/${requestId}/approve`, {}, { headers: { Authorization: `Bearer ${token}` } });
        showToast('Đã duyệt yêu cầu mượn!', 'success');
        await refreshCurrentTab();
      } catch (err) {
@@ -137,7 +142,8 @@ export default function Requests() {
    const handleRejectRequest = async (requestId) => {
      setActionLoading(true);
      try {
-       await axios.put(`http://localhost:5000/api/borrows/${requestId}/reject`, {}, { headers: { 'x-user-id': userId } });
+       const token = localStorage.getItem('token');
+       await axios.put(`http://localhost:5000/api/borrows/${requestId}/reject`, {}, { headers: { Authorization: `Bearer ${token}` } });
        showToast('Đã từ chối yêu cầu mượn!', 'success');
        await refreshCurrentTab();
      } catch (err) {
@@ -148,13 +154,25 @@ export default function Requests() {
    };
 
    const handleCancelRequest = async (requestId) => {
-     showToast('Huỷ yêu cầu: cần bổ sung API cancel riêng nếu muốn dùng.', 'info');
+     if (!window.confirm('Bạn có chắc chắn muốn huỷ yêu cầu mượn này?')) return;
+     setActionLoading(true);
+     try {
+       const token = localStorage.getItem('token');
+       await axios.patch(`http://localhost:5000/api/borrows/${requestId}/cancel`, {}, { headers: { Authorization: `Bearer ${token}` } });
+       showToast('Đã huỷ yêu cầu mượn!', 'success');
+       await refreshCurrentTab();
+     } catch (err) {
+       showToast(err.response?.data?.message || err.message, 'error');
+     } finally {
+       setActionLoading(false);
+     }
    };
 
    const handleConfirmDeposit = async (requestId) => {
      setActionLoading(true);
      try {
-       await axios.patch(`http://localhost:5000/api/borrows/${requestId}/confirm-deposit`, {}, { headers: { 'x-user-id': userId } });
+       const token = localStorage.getItem('token');
+       await axios.patch(`http://localhost:5000/api/borrows/${requestId}/confirm-deposit`, {}, { headers: { Authorization: `Bearer ${token}` } });
        showToast('Đã xác nhận nhận cọc! Quá trình mượn bắt đầu.', 'success');
        await refreshCurrentTab();
      } catch (err) {
@@ -167,7 +185,8 @@ export default function Requests() {
    const handleConfirmReturn = async (requestId) => {
      setActionLoading(true);
      try {
-       await axios.patch(`http://localhost:5000/api/borrows/${requestId}/confirm-return`, {}, { headers: { 'x-user-id': userId } });
+       const token = localStorage.getItem('token');
+       await axios.patch(`http://localhost:5000/api/borrows/${requestId}/confirm-return`, {}, { headers: { Authorization: `Bearer ${token}` } });
        showToast('Đã xác nhận trả đồ và hoàn cọc!', 'success');
        await refreshCurrentTab();
      } catch (err) {
@@ -181,7 +200,8 @@ export default function Requests() {
   const handleApproveExtension = async (requestId) => {
     setActionLoading(true);
     try {
-      await axios.patch(`http://localhost:5000/api/borrows/${requestId}/approve-extension`, {}, { headers: { 'x-user-id': userId } });
+      const token = localStorage.getItem('token');
+      await axios.patch(`http://localhost:5000/api/borrows/${requestId}/approve-extension`, {}, { headers: { Authorization: `Bearer ${token}` } });
       showToast('🎉 Đã đồng ý gia hạn mượn đồ chơi!', 'success');
       await refreshCurrentTab();
     } catch (err) {
@@ -194,7 +214,8 @@ export default function Requests() {
   const handleRejectExtension = async (requestId) => {
     setActionLoading(true);
     try {
-      await axios.patch(`http://localhost:5000/api/borrows/${requestId}/reject-extension`, {}, { headers: { 'x-user-id': userId } });
+      const token = localStorage.getItem('token');
+      await axios.patch(`http://localhost:5000/api/borrows/${requestId}/reject-extension`, {}, { headers: { Authorization: `Bearer ${token}` } });
       showToast('Đã từ chối yêu cầu gia hạn.', 'info');
       await refreshCurrentTab();
     } catch (err) {

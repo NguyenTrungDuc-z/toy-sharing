@@ -4,6 +4,8 @@ import BorrowRequestModal from './BorrowRequestModal';
 import ToyReviewsModal from './ToyReviewsModal';
 import SafetyModal from './SafetyModal';
 import { VIETNAM_REGIONS } from '../constants/vietnamLocations';
+import Toy3DHero from './Toy3DHero';
+import ToyCard3D from './ToyCard3D';
 
 export default function Home({ user, setPage, viewToyDetail }) {
   const [toys, setToys] = useState([]);
@@ -181,34 +183,21 @@ export default function Home({ user, setPage, viewToyDetail }) {
   ];
 
   return (
-    <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '0 16px 60px' }}>
+    <div style={{ maxWidth: '1240px', margin: '0 auto', padding: '24px 16px 60px' }}>
 
-      {/* 1. HERO COMPACT & CAPSULE SEARCH BAR */}
-      <div style={{
+      {/* 1. INTERACTIVE THREE.JS 3D HERO VIEWPORT */}
+      <Toy3DHero onExploreClick={() => {
+        const el = document.getElementById('search-filter-section');
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }} />
+
+      {/* 2. CAPSULE SEARCH BAR: TẤT CẢ TRONG 1 THANH GỌN GÀNG */}
+      <div id="search-filter-section" style={{
         textAlign: 'center',
-        padding: '36px 16px 28px',
+        padding: '12px 16px 24px',
         maxWidth: '860px',
         margin: '0 auto',
       }}>
-        <h1 style={{
-          fontSize: '38px',
-          fontWeight: '800',
-          color: 'var(--text-main)',
-          marginBottom: '10px',
-          letterSpacing: '-0.5px',
-          lineHeight: '1.25'
-        }}>
-          Chia sẻ đồ chơi, <span style={{ color: 'var(--primary-color)' }}>Nhân đôi niềm vui</span>
-        </h1>
-        <p style={{
-          fontSize: '15px',
-          color: 'var(--text-muted)',
-          marginBottom: '26px',
-          lineHeight: '1.5'
-        }}>
-          Khám phá hàng trăm bộ đồ chơi giáo dục chính hãng cho bé với chi phí tiết kiệm 80%. Đảm bảo 100% khử trùng UV-C an toàn.
-        </p>
-
         {/* CAPSULE SEARCH BAR: TẤT CẢ TRONG 1 THANH GỌN GÀNG */}
         <div style={{
           background: 'var(--color-card)',
@@ -479,171 +468,17 @@ export default function Home({ user, setPage, viewToyDetail }) {
           gap: '24px',
           marginBottom: '40px'
         }}>
-          {filteredToys.map((toy) => {
-            const isFav = favorites.includes(toy._id);
-            const ownerName = typeof toy.ownerId === 'object' ? toy.ownerId?.name : (toy.ownerName || 'Chủ đồ chơi');
-
-            return (
-              <div
-                key={toy._id}
-                onClick={() => viewToyDetail && viewToyDetail(toy._id)}
-                style={{
-                  background: 'var(--color-card)',
-                  borderRadius: '20px',
-                  overflow: 'hidden',
-                  border: '1px solid var(--color-border)',
-                  boxShadow: 'var(--shadow-sm)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-                }}
-                onMouseOver={e => {
-                  e.currentTarget.style.transform = 'translateY(-4px)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-md)';
-                }}
-                onMouseOut={e => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
-                }}
-              >
-                {/* ẢNH ĐỒ CHƠI & NÚT YÊU THÍCH */}
-                <div>
-                  <div style={{
-                    position: 'relative',
-                    width: '100%',
-                    height: '190px',
-                    background: '#fbf7f4',
-                    overflow: 'hidden'
-                  }}>
-                    {toy.images && toy.images.length > 0 ? (
-                      <img
-                        src={toy.images[0]}
-                        alt={toy.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '40px' }}>
-                        🧸
-                      </div>
-                    )}
-
-                    {/* Nút tim yêu thích góc phải */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleFavorite(toy, e)}
-                      title={isFav ? "Bỏ yêu thích" : "Yêu thích"}
-                      style={{
-                        position: 'absolute',
-                        top: '10px',
-                        right: '10px',
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        border: 'none',
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '50%',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '16px',
-                        color: isFav ? '#dc2626' : '#9ca3af',
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
-                      }}
-                    >
-                      {isFav ? '♥' : '♡'}
-                    </button>
-
-                    {/* Badge địa điểm nhỏ góc dưới */}
-                    {toy.location && (
-                      <span style={{
-                        position: 'absolute',
-                        bottom: '8px',
-                        left: '8px',
-                        background: 'rgba(255, 255, 255, 0.92)',
-                        padding: '3px 8px',
-                        borderRadius: '10px',
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        color: '#4b5563'
-                      }}>
-                        📍 {toy.location}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* THÔNG TIN CHÍNH */}
-                  <div style={{ padding: '14px 14px 8px' }}>
-                    <div style={{ fontSize: '12px', color: '#8a776a', marginBottom: '4px', fontWeight: '500' }}>
-                      {toy.category} • {toy.ageRange}
-                    </div>
-
-                    <h3 style={{
-                      fontSize: '15px',
-                      fontWeight: '700',
-                      color: 'var(--text-main)',
-                      lineHeight: '1.4',
-                      height: '42px',
-                      overflow: 'hidden',
-                      margin: '0 0 6px 0'
-                    }}>
-                      {toy.name}
-                    </h3>
-
-                    {/* Đánh giá sao */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
-                      <span style={{ color: '#f59e0b', fontWeight: '700' }}>
-                        ★ {toy.rating?.avg > 0 ? toy.rating.avg.toFixed(1) : '5.0'}
-                      </span>
-                      <span style={{ color: '#9ca3af' }}>
-                        ({toy.rating?.count || 0})
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* HÀNG DƯỚI CÙNG: TIỀN CỌC & NÚT MƯỢN */}
-                <div style={{
-                  padding: '10px 14px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  borderTop: '1px solid #f9f5f1'
-                }}>
-                  <div>
-                    <span style={{ fontSize: '11px', color: '#8a776a', display: 'block' }}>Tiền cọc</span>
-                    <strong style={{ fontSize: '15px', color: 'var(--primary-color)' }}>
-                      {(toy.depositRequired || 0).toLocaleString()}đ
-                    </strong>
-                  </div>
-
-                  {isOwnToy(toy) ? (
-                    <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600' }}>
-                      Của bạn
-                    </span>
-                  ) : toy.status === 'borrowed' ? (
-                    <span style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600' }}>
-                      Đang mượn
-                    </span>
-                  ) : (
-                    <button
-                      onClick={(e) => handleBorrowClick(toy, e)}
-                      className="btn-primary"
-                      style={{
-                        padding: '6px 14px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: '600'
-                      }}
-                    >
-                      Mượn ngay
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {filteredToys.map((toy) => (
+            <ToyCard3D
+              key={toy._id}
+              toy={toy}
+              isFavorite={favorites.includes(toy._id)}
+              onToggleFavorite={handleToggleFavorite}
+              onClick={() => viewToyDetail && viewToyDetail(toy._id)}
+              onBorrowClick={handleBorrowClick}
+              isOwnToy={isOwnToy(toy)}
+            />
+          ))}
         </div>
       )}
 

@@ -16,7 +16,11 @@ let failed = 0;
 const assert = (cond, msg) => { if (cond) console.log('  PASS:', msg); else { console.log('  FAIL:', msg); failed++; } };
 
 async function registerAndLogin(name, email) {
-  await call('POST', '/auth/register', { body: { name, email, password: '12345678', phone: '0900000000' } });
+  const reg = await call('POST', '/auth/register', { body: { name, email, password: '12345678', phone: '0900000000' } });
+  // Nếu hệ thống bật xác thực email, dùng devVerifyToken (chỉ có ở môi trường test) để xác thực trước khi đăng nhập
+  if (reg.data?.requiresVerification && reg.data?.devVerifyToken) {
+    await call('POST', '/auth/verify-email', { body: { email, token: reg.data.devVerifyToken } });
+  }
   const login = await call('POST', '/auth/login', { body: { email, password: '12345678' } });
   return { token: login.data.token, id: login.data.user?.id };
 }

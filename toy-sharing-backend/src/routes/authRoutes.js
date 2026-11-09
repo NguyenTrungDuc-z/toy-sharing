@@ -12,6 +12,8 @@ router.post('/login', authController.login);
 router.post('/google', authController.googleLogin);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);
+router.post('/verify-email', authController.verifyEmail);
+router.post('/resend-verification', authController.resendVerification);
 router.get('/me', auth, authController.getMe);
 router.get('/me/favorites', auth, authController.getFavorites);
 router.put('/me', auth, authController.updateMe);

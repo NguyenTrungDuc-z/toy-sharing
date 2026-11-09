@@ -13,6 +13,10 @@ const userSchema = new mongoose.Schema({
   tokenVersion: { type: Number, default: 0 },
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },
+  // Xác thực email khi đăng ký (tài khoản cũ để undefined = coi như hợp lệ)
+  emailVerified: { type: Boolean },
+  emailVerifyToken: { type: String },
+  emailVerifyExpires: { type: Date },
   rating: {
     avg: { type: Number, default: 0 },
     count: { type: Number, default: 0 }

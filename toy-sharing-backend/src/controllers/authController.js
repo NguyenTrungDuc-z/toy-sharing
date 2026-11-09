@@ -32,6 +32,10 @@ exports.register = async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
+        // Chỉ bắt buộc xác thực email KHI hệ thống đã cấu hình gửi email.
+        // Nếu chưa cấu hình (dev) -> kích hoạt luôn để app vẫn dùng được.
+        const emailConfigured = emailService.isEmailConfigured();
+        const verifyToken = crypto.randomBytes(32).toString('hex');
         const newUser = new User({
             name,
             email,
@@ -39,11 +43,40 @@ exports.register = async (req, res) => {
             phone,
             address: "",
             avatar: "",
-            role: "user"
+            role: "user",
+            authProvider: 'local',
+            emailVerified: emailConfigured ? false : true,
+            emailVerifyToken: emailConfigured ? verifyToken : undefined,
+            emailVerifyExpires: emailConfigured ? new Date(Date.now() + 24 * 3600 * 1000) : undefined
         });
 
         await newUser.save();
-        res.status(201).json({ message: 'Đăng ký tài khoản thành công!' });
+
+        let emailResult = { sent: false };
+        if (emailConfigured) {
+            const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+            const verifyUrl = `${clientUrl}/?page=verify-email&token=${verifyToken}&email=${encodeURIComponent(email)}`;
+            try {
+                emailResult = await emailService.sendGenericEmail({
+                    to: email, userName: name,
+                    subject: '[ToyShare] Xác thực địa chỉ email',
+                    heading: 'Xác thực email để kích hoạt tài khoản',
+                    lines: ['Cảm ơn bạn đã đăng ký ToyShare. Vui lòng xác thực email để bắt đầu mượn/cho mượn đồ chơi.',
+                            'Liên kết có hiệu lực trong 24 giờ.'],
+                    actionUrl: verifyUrl, actionText: 'Xác thực email ngay'
+                });
+            } catch (e) { /* bỏ qua lỗi gửi mail */ }
+        }
+
+        res.status(201).json({
+            message: emailConfigured
+                ? 'Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.'
+                : 'Đăng ký thành công! Bạn có thể đăng nhập ngay.',
+            emailSent: !!emailResult.sent,
+            requiresVerification: emailConfigured,
+            // Tiện cho kiểm thử ở môi trường không phải production (không lộ ở production)
+            ...(emailConfigured && process.env.NODE_ENV !== 'production' ? { devVerifyToken: verifyToken } : {})
+        });
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server khi đăng ký', error: err.message });
     }
@@ -87,6 +120,11 @@ exports.login = async (req, res) => {
             return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!' });
         }
 
+        // Chặn đăng nhập nếu email chưa xác thực (chỉ áp dụng cho tài khoản mới: emailVerified === false)
+        if (user.emailVerified === false) {
+            return res.status(403).json({ message: 'Email chưa được xác thực. Vui lòng kiểm tra hộp thư hoặc yêu cầu gửi lại email xác thực.', needsVerification: true, email: user.email });
+        }
+
         // Generate JWT token
         const token = jwt.sign(
             { userId: user._id, tokenVersion: user.tokenVersion || 0 },
@@ -108,6 +146,55 @@ exports.login = async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server khi đăng nhập', error: err.message });
+    }
+};
+
+// 2a. API XÁC THỰC EMAIL
+exports.verifyEmail = async (req, res) => {
+    try {
+        const { token, email } = req.body;
+        if (!token || !email) return res.status(400).json({ message: 'Thiếu thông tin xác thực!' });
+        const user = await User.findOne({ email, emailVerifyToken: token });
+        if (!user) return res.status(400).json({ message: 'Liên kết xác thực không hợp lệ!' });
+        if (user.emailVerifyExpires && user.emailVerifyExpires < new Date()) {
+            return res.status(400).json({ message: 'Liên kết xác thực đã hết hạn. Vui lòng yêu cầu gửi lại.' });
+        }
+        user.emailVerified = true;
+        user.emailVerifyToken = undefined;
+        user.emailVerifyExpires = undefined;
+        await user.save();
+        res.json({ message: 'Xác thực email thành công! Bạn có thể đăng nhập ngay.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi xác thực email', error: err.message });
+    }
+};
+
+// 2a-bis. GỬI LẠI EMAIL XÁC THỰC
+exports.resendVerification = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ message: 'Vui lòng nhập email!' });
+        const user = await User.findOne({ email });
+        // Không tiết lộ email có tồn tại hay không
+        if (!user || user.emailVerified !== false) {
+            return res.json({ message: 'Nếu email cần xác thực, chúng tôi đã gửi lại liên kết.' });
+        }
+        const verifyToken = crypto.randomBytes(32).toString('hex');
+        user.emailVerifyToken = verifyToken;
+        user.emailVerifyExpires = new Date(Date.now() + 24 * 3600 * 1000);
+        await user.save();
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        const verifyUrl = `${clientUrl}/?page=verify-email&token=${verifyToken}&email=${encodeURIComponent(email)}`;
+        await emailService.sendGenericEmail({
+            to: email, userName: user.name,
+            subject: '[ToyShare] Gửi lại liên kết xác thực email',
+            heading: 'Xác thực email tài khoản ToyShare',
+            lines: ['Bạn vừa yêu cầu gửi lại liên kết xác thực. Liên kết có hiệu lực trong 24 giờ.'],
+            actionUrl: verifyUrl, actionText: 'Xác thực email ngay'
+        });
+        res.json({ message: 'Nếu email cần xác thực, chúng tôi đã gửi lại liên kết.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi gửi lại email xác thực', error: err.message });
     }
 };
 
@@ -153,13 +240,16 @@ exports.googleLogin = async (req, res) => {
                 authProvider: 'google',
                 avatar: picture || '',
                 role: 'user',
-                status: 'active'
+                status: 'active',
+                emailVerified: true   // Email đã được Google xác minh
             });
         } else {
             // Liên kết googleId nếu tài khoản email đã tồn tại (đăng ký local trước đó)
             let changed = false;
             if (!user.googleId) { user.googleId = googleId; changed = true; }
             if (!user.avatar && picture) { user.avatar = picture; changed = true; }
+            // Đăng nhập Google = email đã xác minh -> kích hoạt luôn nếu đang chờ xác thực
+            if (user.emailVerified === false) { user.emailVerified = true; user.emailVerifyToken = undefined; changed = true; }
             if (changed) await user.save();
         }
 

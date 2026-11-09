@@ -9,7 +9,7 @@ const call = async (m, p, { token, body } = {}) => {
 };
 let failed = 0;
 const assert = (c, m) => { if (c) console.log('  PASS:', m); else { console.log('  FAIL:', m); failed++; } };
-const reg = async (n, e) => { await call('POST', '/auth/register', { body: { name: n, email: e, password: '12345678', phone: '0900000000' } }); const l = await call('POST', '/auth/login', { body: { email: e, password: '12345678' } }); return { token: l.data.token, id: l.data.user?.id }; };
+const reg = async (n, e) => { const r = await call('POST', '/auth/register', { body: { name: n, email: e, password: '12345678', phone: '0900000000' } }); if (r.data?.requiresVerification && r.data?.devVerifyToken) { await call('POST', '/auth/verify-email', { body: { email: e, token: r.data.devVerifyToken } }); } const l = await call('POST', '/auth/login', { body: { email: e, password: '12345678' } }); return { token: l.data.token, id: l.data.user?.id }; };
 
 async function mkToy(owner, adminToken, deposit) {
   const c = await call('POST', '/toys', { token: owner.token, body: { name: 'Toy ' + rnd + Math.random().toString(36).slice(2,4), category: 'Giáo dục', ageRange: '3-6 tuổi', condition: 'new', images: [], depositRequired: deposit } });

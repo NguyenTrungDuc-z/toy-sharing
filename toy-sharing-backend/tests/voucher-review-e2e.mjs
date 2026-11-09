@@ -16,7 +16,10 @@ let failed = 0;
 const assert = (cond, msg) => { if (cond) console.log('  PASS:', msg); else { console.log('  FAIL:', msg); failed++; } };
 
 async function reg(name, email) {
-  await call('POST', '/auth/register', { body: { name, email, password: '12345678', phone: '0900000000' } });
+  const r = await call('POST', '/auth/register', { body: { name, email, password: '12345678', phone: '0900000000' } });
+  if (r.data?.requiresVerification && r.data?.devVerifyToken) {
+    await call('POST', '/auth/verify-email', { body: { email, token: r.data.devVerifyToken } });
+  }
   const login = await call('POST', '/auth/login', { body: { email, password: '12345678' } });
   return { token: login.data.token, id: login.data.user?.id };
 }

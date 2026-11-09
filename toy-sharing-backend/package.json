@@ -6,6 +6,8 @@
     "start": "node src/App.js",
     "dev": "nodemon src/App.js",
     "test:e2e": "node tests/escrow-e2e.mjs && node tests/voucher-review-e2e.mjs && node tests/fixes-e2e.mjs",
+    "seed": "node scripts/seed.js",
+    "seed:fresh": "node scripts/seed.js fresh",
     "cleanup": "node scripts/cleanup-testdata.js",
     "cleanup:apply": "node scripts/cleanup-testdata.js apply"
   },

@@ -1,435 +1,231 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import {
+  App, Row, Col, Image, Tag, Rate, Card, Button, Avatar, Typography, Breadcrumb,
+  Divider, Empty, Spin, Flex, Alert,
+} from 'antd';
+import {
+  UserOutlined, EnvironmentOutlined, SafetyCertificateOutlined, HomeOutlined,
+} from '@ant-design/icons';
 import BorrowRequestModal from './BorrowRequestModal';
 
-const conditionLabels = {
-  new: 'Mới 100%',
-  like_new: 'Như mới (95%)',
-  used: 'Đã qua sử dụng'
+const conditionMeta = {
+  new: { label: 'Mới 100%', color: 'green' },
+  like_new: { label: 'Như mới', color: 'cyan' },
+  used: { label: 'Đã qua sử dụng', color: 'orange' },
 };
-
-const conditionColors = {
-  new: { bg: '#ecfdf5', color: '#047857' },
-  like_new: { bg: '#eff6ff', color: '#1d4ed8' },
-  used: { bg: '#fef3c7', color: '#b45309' }
-};
+const MANGO = '#ffb627';
 
 export default function ToyDetail({ toyId, user, setPage, viewOwner, viewToyDetail }) {
+  const { message } = App.useApp();
   const [toy, setToy] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState({ avg: 0, count: 0 });
   const [relatedToys, setRelatedToys] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeImage, setActiveImage] = useState(0);
   const [showBorrow, setShowBorrow] = useState(false);
-  const [toast, setToast] = useState(null);
 
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+  const showToast = (msg, type = 'success') => {
+    if (type === 'error') message.error(msg);
+    else if (type === 'info') message.info(msg);
+    else message.success(msg);
   };
 
   useEffect(() => {
     if (!toyId) return;
     let active = true;
     setLoading(true);
-    setActiveImage(0);
-
-    // 1. Lấy chi tiết đồ chơi
     axios.get(`http://localhost:5000/api/toys/${toyId}`)
-      .then(res => {
-        if (!active) return;
-        setToy(res.data);
-        setError('');
-      })
-      .catch(err => {
-        if (active) setError(err.response?.data?.message || 'Không tìm thấy đồ chơi.');
-      })
+      .then(res => { if (active) { setToy(res.data); setError(''); } })
+      .catch(err => { if (active) setError(err.response?.data?.message || 'Không tìm thấy đồ chơi.'); })
       .finally(() => { if (active) setLoading(false); });
-
-    // 2. Lấy nhận xét
     axios.get(`http://localhost:5000/api/reviews/toy/${toyId}`)
-      .then(res => {
-        if (!active) return;
-        if (res.data.success) {
-          setReviews(res.data.reviews || []);
-          setReviewStats(res.data.stats || { avg: 0, count: 0 });
-        }
-      })
+      .then(res => { if (active && res.data.success) { setReviews(res.data.reviews || []); setReviewStats(res.data.stats || { avg: 0, count: 0 }); } })
       .catch(() => {});
-
-    // 3. Lấy đồ chơi gợi ý liên quan
     axios.get(`http://localhost:5000/api/toys/${toyId}/related`)
-      .then(res => {
-        if (!active) return;
-        if (res.data.success) {
-          setRelatedToys(res.data.related || []);
-        }
-      })
+      .then(res => { if (active && res.data.success) setRelatedToys(res.data.related || []); })
       .catch(() => {});
-
     return () => { active = false; };
   }, [toyId]);
 
   const handleBorrowClick = () => {
-    if (!user) {
-      showToast('Vui lòng đăng nhập để mượn đồ chơi!', 'info');
-      if (setPage) setPage('login');
-      return;
-    }
+    if (!user) { showToast('Vui lòng đăng nhập để mượn đồ chơi!', 'info'); setPage?.('login'); return; }
     setShowBorrow(true);
   };
 
-  if (loading) return (
-    <div style={{ textAlign: 'center', padding: '120px 20px', color: 'var(--text-muted)' }}>
-      <div style={{ fontSize: '40px', marginBottom: '16px' }}>🧸</div>
-      <div style={{ fontSize: '18px', fontWeight: '600' }}>Đang tải thông tin chi tiết đồ chơi...</div>
-    </div>
-  );
-
+  if (loading) return <div style={{ textAlign: 'center', padding: '100px 0' }}><Spin size="large" /></div>;
   if (error) return (
-    <div style={{ textAlign: 'center', padding: '80px 20px' }}>
-      <p style={{ color: '#dc2626', fontSize: '16px', marginBottom: '20px' }}>{error}</p>
-      <button className="btn-primary" onClick={() => setPage && setPage('home')} style={{ padding: '12px 28px' }}>
-        ← Quay lại trang chủ
-      </button>
-    </div>
+    <Flex vertical align="center" gap={16} style={{ padding: '80px 20px' }}>
+      <Typography.Text type="danger">{error}</Typography.Text>
+      <Button type="primary" onClick={() => setPage?.('home')}>Quay lại trang chủ</Button>
+    </Flex>
   );
-
   if (!toy) return null;
 
   const owner = toy.ownerId || {};
   const isOwnToy = user && (owner._id === user._id || owner._id === user.id);
-  const images = toy.images && toy.images.length > 0 ? toy.images : [];
+  const images = toy.images?.length > 0 ? toy.images : [];
   const canBorrow = !isOwnToy && toy.status === 'available';
-  const condStyle = conditionColors[toy.condition] || { bg: '#f3ede7', color: '#7c6e65' };
+  const cond = conditionMeta[toy.condition] || { label: 'Tốt', color: 'default' };
+  const rating = reviewStats.count > 0 ? reviewStats.avg : (toy.rating?.avg || 0);
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px 20px 80px' }}>
-      
-      {/* THANH ĐIỀU HƯỚNG BREADCRUMB */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', marginBottom: '24px', color: '#8a776a' }}>
-        <span onClick={() => setPage && setPage('home')} style={{ cursor: 'pointer', color: 'var(--primary-color)', fontWeight: '600' }}>
-          Trang chủ
-        </span>
-        <span>›</span>
-        <span>{toy.category}</span>
-        <span>›</span>
-        <span style={{ color: '#2d2520', fontWeight: '600', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {toy.name}
-        </span>
-      </div>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px clamp(16px,4vw,24px) 72px' }}>
+      <Breadcrumb style={{ marginBottom: 20 }} items={[
+        { title: <a onClick={() => setPage?.('home')}><HomeOutlined /> Trang chủ</a> },
+        { title: toy.category },
+        { title: toy.name },
+      ]} />
 
-      {/* KHỐI NỘI DUNG CHÍNH (2 CỘT) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.15fr) minmax(0, 0.85fr)', gap: '48px', alignItems: 'start', marginBottom: '60px' }}>
-        
-        {/* CỘT TRÁI: BỘ ẢNH & CAM KẾT CHẤT LƯỢNG */}
-        <div>
-          {/* ẢNH CHÍNH */}
-          <div style={{ position: 'relative', width: '100%', height: '440px', background: '#fbf7f4', borderRadius: '28px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 30px rgba(92, 77, 66, 0.06)', border: '1px solid #f1eae4' }}>
-            {images.length > 0 ? (
-              <img
-                src={images[activeImage]}
-                alt={toy.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : (
-              <span style={{ fontSize: '90px' }}>🧸</span>
-            )}
-
-            {/* BADGES NỔI TRÊN ẢNH */}
-            <div style={{ position: 'absolute', top: '16px', left: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ background: '#16a34a', color: '#fff', fontSize: '12px', fontWeight: '700', padding: '6px 14px', borderRadius: '20px', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)' }}>
-                ☀️ Đã tiệt trùng UV-C
-              </span>
-              <span style={{ background: condStyle.bg, color: condStyle.color, fontSize: '12px', fontWeight: '700', padding: '6px 14px', borderRadius: '20px', border: `1px solid ${condStyle.color}` }}>
-                {conditionLabels[toy.condition] || 'Tốt'}
-              </span>
+      <Row gutter={[40, 32]} align="top">
+        {/* Ảnh */}
+        <Col xs={24} md={13}>
+          <Image.PreviewGroup>
+            <div style={{ borderRadius: 16, overflow: 'hidden', border: '1px solid var(--color-border)', background: '#f1f4f6', aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {images.length > 0
+                ? <Image src={images[0]} alt={toy.name} width="100%" height="100%" style={{ objectFit: 'cover' }} />
+                : <span style={{ fontSize: 80 }}>🧸</span>}
             </div>
-
-            {toy.location && (
-              <div style={{ position: 'absolute', bottom: '16px', left: '16px', background: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(4px)', padding: '6px 14px', borderRadius: '20px', fontSize: '12px', fontWeight: '700', color: '#047857' }}>
-                📍 {toy.location}
-              </div>
-            )}
-          </div>
-
-          {/* DẢI ẢNH THUMBNAILS (NẾU CÓ NHIỀU ẢNH) */}
-          {images.length > 1 && (
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
-              {images.map((img, idx) => (
-                <div
-                  key={idx}
-                  onClick={() => setActiveImage(idx)}
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    border: activeImage === idx ? '3px solid var(--primary-color)' : '2px solid #ebdcd0',
-                    transition: 'all 0.2s',
-                    flexShrink: 0
-                  }}
-                >
-                  <img src={img} alt={`${toy.name} ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* CHECKLIST CAM KẾT CHẤT LƯỢNG TOYSHARE */}
-          <div style={{ marginTop: '28px', background: '#fff9f4', border: '1px solid #fae6d3', borderRadius: '20px', padding: '24px' }}>
-            <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#be6e15', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🛡️</span> Cam kết An toàn & Khử khuẩn tiêu chuẩn
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '13px', color: '#52473f' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: '#16a34a', fontWeight: '800' }}>✓</span> Đã khử khuẩn buồng UV-C
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: '#16a34a', fontWeight: '800' }}>✓</span> Không cạnh sắc nhọn, gãy vỡ
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: '#16a34a', fontWeight: '800' }}>✓</span> Đầy đủ 100% linh kiện phụ kiện
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ color: '#16a34a', fontWeight: '800' }}>✓</span> Ký quỹ VietQR an toàn tuyệt đối
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* CỘT PHẢI: THÔNG TIN CHI TIẾT & HÀNH ĐỘNG */}
-        <div>
-          {/* TAGS PHÂN LOẠI */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '12px', color: 'var(--primary-color)', fontWeight: '700', background: '#fff3e0', padding: '5px 14px', borderRadius: '20px' }}>
-              {toy.ageRange}
-            </span>
-            <span style={{ fontSize: '12px', color: '#4f46e5', fontWeight: '700', background: '#eeeeff', padding: '5px 14px', borderRadius: '20px' }}>
-              {toy.category}
-            </span>
-            <span style={{ fontSize: '12px', color: '#059669', fontWeight: '700', background: '#ecfdf5', padding: '5px 14px', borderRadius: '20px' }}>
-              {toy.status === 'available' ? '● Đang sẵn sàng' : '○ Đang được mượn'}
-            </span>
-          </div>
-
-          {/* TÊN ĐỒ CHƠI */}
-          <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#1f160f', marginBottom: '12px', lineHeight: '1.3' }}>
-            {toy.name}
-          </h1>
-
-          {/* RATING */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-            <span style={{ color: '#f59e0b', fontSize: '16px', fontWeight: '800' }}>
-              ★ {reviewStats.avg > 0 ? reviewStats.avg.toFixed(1) : (toy.rating?.avg > 0 ? toy.rating.avg.toFixed(1) : '5.0')}
-            </span>
-            <span style={{ color: '#8a776a', fontSize: '14px' }}>
-              ({reviewStats.count || toy.rating?.count || 0} nhận xét từ phụ huynh)
-            </span>
-          </div>
-
-          {/* BOX TIỀN CỌC & ƯU ĐÃI */}
-          <div style={{ background: '#ffffff', border: '2px solid #fae6d3', borderRadius: '24px', padding: '24px', marginBottom: '28px', boxShadow: '0 8px 24px rgba(190, 110, 21, 0.06)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-              <div>
-                <span style={{ fontSize: '13px', color: '#8a776a', fontWeight: '600' }}>Tiền cọc bảo chứng:</span>
-                <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--primary-color)', lineHeight: '1.2' }}>
-                  {(toy.depositRequired || 0).toLocaleString()}đ
-                </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <span style={{ background: '#ecfdf5', color: '#065f46', fontSize: '11px', fontWeight: '700', padding: '4px 10px', borderRadius: '20px', display: 'inline-block', marginBottom: '4px' }}>
-                  🎁 Miễn phí mượn
-                </span>
-                <div style={{ fontSize: '11px', color: '#8a776a' }}>Hoàn cọc 100% khi trả đồ</div>
-              </div>
-            </div>
-
-            <div style={{ background: '#fdf8f4', padding: '12px 16px', borderRadius: '14px', fontSize: '13px', color: '#68594e', lineHeight: '1.5' }}>
-              💡 <strong>Gợi ý:</strong> Nhập mã ưu đãi <code>TOYSHARENEW</code> ở bước tiếp theo để được trợ giá ngay 20.000đ tiền cọc!
-            </div>
-          </div>
-
-          {/* MÔ TẢ ĐỒ CHƠI */}
-          <div style={{ marginBottom: '28px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#2d2520', marginBottom: '10px' }}>
-              Mô tả sản phẩm & Trải nghiệm cho bé
-            </h3>
-            <p style={{ fontSize: '15px', color: '#52473f', lineHeight: '1.7', margin: 0, whiteSpace: 'pre-line' }}>
-              {toy.description || 'Chủ sở hữu chưa cập nhật mô tả chi tiết, nhưng đồ chơi đã được kiểm duyệt chất lượng.'}
-            </p>
-          </div>
-
-          {/* HỒ SƠ CHỦ SỞ HỮU (OWNER TRUST CARD) */}
-          <div style={{ background: '#fff', border: '1px solid #f1eae4', borderRadius: '20px', padding: '20px', marginBottom: '32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-              <div style={{ width: '52px', height: '52px', borderRadius: '50%', overflow: 'hidden', background: '#f3e8df', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                {owner.avatar ? (
-                  <img src={owner.avatar} alt={owner.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : '👤'}
-              </div>
-              <div>
-                <div style={{ fontWeight: '700', fontSize: '15px', color: '#2d2520', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {owner.name || 'Thành viên ToyShare'}
-                  <span style={{ color: '#16a34a', fontSize: '12px' }} title="Đã xác thực danh tính">✔️</span>
-                </div>
-                <div style={{ fontSize: '12px', color: '#8a776a', marginTop: '2px' }}>
-                  Đã xác thực CCCD & SĐT • Tỉ lệ phản hồi 100%
-                </div>
-              </div>
-            </div>
-
-            {viewOwner && owner._id && (
-              <button
-                type="button"
-                onClick={() => viewOwner(owner._id)}
-                style={{ background: '#fff', border: '1px solid #ebdcd0', color: 'var(--primary-color)', padding: '8px 16px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}
-              >
-                Xem trang cá nhân →
-              </button>
-            )}
-          </div>
-
-          {/* NÚT HÀNH ĐỘNG CHÍNH */}
-          <div>
-            {canBorrow ? (
-              <button
-                onClick={handleBorrowClick}
-                className="btn-primary"
-                style={{ width: '100%', padding: '16px', borderRadius: '30px', justifyContent: 'center', fontSize: '16px', fontWeight: '700', boxShadow: '0 8px 24px rgba(190, 110, 21, 0.3)' }}
-              >
-                🚀 Gửi yêu cầu mượn cho bé ngay
-              </button>
-            ) : isOwnToy ? (
-              <div style={{ background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '16px', textAlign: 'center', color: '#6b7280', fontWeight: '600', fontSize: '14px' }}>
-                ℹ️ Bạn là chủ sở hữu của món đồ chơi này.
-              </div>
-            ) : (
-              <div style={{ background: '#fef3c7', border: '1px solid #fde68a', borderRadius: '16px', padding: '16px', textAlign: 'center', color: '#92400e', fontWeight: '600', fontSize: '14px' }}>
-                ⏳ Đồ chơi hiện đang được một bé khác mượn. Bạn có thể bấm yêu thích để nhận thông báo khi đồ sẵn sàng!
-              </div>
-            )}
-          </div>
-
-        </div>
-      </div>
-
-      {/* DANH SÁCH NHẬN XÉT TỪ PHỤ HUYNH */}
-      <div style={{ borderTop: '2px dashed #f1eae4', paddingTop: '48px', marginBottom: '60px' }}>
-        <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#1f160f', marginBottom: '20px' }}>
-          Nhận xét & Đánh giá thực tế ({reviews.length})
-        </h3>
-
-        {reviews.length === 0 ? (
-          <div style={{ background: '#fffbf7', padding: '36px', borderRadius: '20px', textAlign: 'center', color: '#8a776a', fontSize: '14px' }}>
-            Chưa có đánh giá nào cho món đồ chơi này. Hãy là người đầu tiên mượn và chia sẻ cảm nhận!
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
-            {reviews.map(rev => (
-              <div key={rev._id} style={{ background: '#fff', border: '1px solid #f1eae4', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 16px rgba(0,0,0,0.02)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                  <div style={{ fontWeight: '700', fontSize: '14px', color: '#2d2520' }}>
-                    {rev.reviewerId?.name || 'Phụ huynh'}
+            {images.length > 1 && (
+              <Flex gap={10} wrap style={{ marginTop: 12 }}>
+                {images.slice(1).map((img, i) => (
+                  <div key={i} style={{ width: 80, height: 80, borderRadius: 10, overflow: 'hidden', border: '1px solid var(--color-border)' }}>
+                    <Image src={img} alt={`${toy.name} ${i + 2}`} width={80} height={80} style={{ objectFit: 'cover' }} />
                   </div>
-                  <div style={{ color: '#f59e0b', fontSize: '14px', fontWeight: '700' }}>
-                    {'★'.repeat(rev.rating)}{'☆'.repeat(5 - rev.rating)}
-                  </div>
-                </div>
-                <p style={{ fontSize: '14px', color: '#52473f', lineHeight: '1.6', margin: 0 }}>
-                  "{rev.comment}"
-                </p>
-                <div style={{ fontSize: '11px', color: '#a8988b', marginTop: '10px' }}>
-                  Đã mượn qua ToyShare • Đã xác thực trả đồ
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                ))}
+              </Flex>
+            )}
+          </Image.PreviewGroup>
 
-      {/* ĐỒ CHƠI GỢI Ý TƯƠNG TỰ (RELATED TOYS) */}
-      {relatedToys.length > 0 && (
-        <div style={{ borderTop: '2px dashed #f1eae4', paddingTop: '48px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <div>
-              <h3 style={{ fontSize: '22px', fontWeight: '800', color: '#1f160f', margin: 0 }}>
-                Gợi ý đồ chơi tương tự cho bé
-              </h3>
-              <p style={{ color: '#8a776a', fontSize: '14px', marginTop: '4px' }}>
-                Cùng độ tuổi {toy.ageRange} và nhóm {toy.category}
-              </p>
+          <Alert style={{ marginTop: 20 }} type="success" showIcon icon={<SafetyCertificateOutlined />}
+            message="Cam kết an toàn ToyShare"
+            description="Đồ chơi được chủ cam kết vệ sinh sạch sẽ, đầy đủ linh kiện. Tiền cọc ký quỹ qua VietQR và được hoàn 100% khi trả đồ nguyên vẹn." />
+        </Col>
+
+        {/* Thông tin */}
+        <Col xs={24} md={11}>
+          <Flex gap={8} wrap style={{ marginBottom: 12 }}>
+            <Tag color="blue">{toy.ageRange}</Tag>
+            <Tag>{toy.category}</Tag>
+            <Tag color={cond.color}>{cond.label}</Tag>
+            <Tag color={toy.status === 'available' ? 'green' : 'default'}>
+              {toy.status === 'available' ? 'Đang sẵn sàng' : 'Đang được mượn'}
+            </Tag>
+          </Flex>
+
+          <Typography.Title level={2} style={{ marginTop: 0, marginBottom: 10 }}>{toy.name}</Typography.Title>
+
+          <Flex align="center" gap={8} style={{ marginBottom: 20 }}>
+            <Rate disabled allowHalf value={rating || 5} style={{ fontSize: 15, color: MANGO }} />
+            <Typography.Text strong>{rating > 0 ? rating.toFixed(1) : '5.0'}</Typography.Text>
+            <Typography.Text type="secondary">({reviewStats.count || toy.rating?.count || 0} nhận xét)</Typography.Text>
+          </Flex>
+
+          <Card style={{ marginBottom: 24, background: '#f0f7fa', border: '1px solid var(--color-primary-border)' }} styles={{ body: { padding: 20 } }}>
+            <Typography.Text type="secondary">Tiền cọc bảo chứng</Typography.Text>
+            <div style={{ fontSize: 30, fontWeight: 800, color: 'var(--color-primary)', lineHeight: 1.2 }}>
+              {(toy.depositRequired || 0).toLocaleString()}đ
             </div>
-          </div>
+            <Typography.Text type="secondary" style={{ fontSize: 13 }}>Mượn miễn phí — hoàn cọc 100% khi trả đồ nguyên vẹn.</Typography.Text>
+          </Card>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '24px' }}>
-            {relatedToys.map(rel => (
-              <div
-                key={rel._id}
-                className="toy-card"
-                onClick={() => {
-                  if (viewToyDetail) viewToyDetail(rel._id);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}
-              >
+          <Typography.Title level={5}>Mô tả</Typography.Title>
+          <Typography.Paragraph style={{ color: '#52473f', whiteSpace: 'pre-line' }}>
+            {toy.description || 'Chủ sở hữu chưa cập nhật mô tả chi tiết.'}
+          </Typography.Paragraph>
+
+          {/* Chủ sở hữu */}
+          <Card style={{ marginBottom: 24 }} styles={{ body: { padding: 16 } }}>
+            <Flex align="center" justify="space-between" wrap gap={12}>
+              <Flex align="center" gap={12}>
+                <Avatar size={48} src={owner.avatar || undefined} icon={<UserOutlined />} />
                 <div>
-                  <div style={{ width: '100%', height: '180px', borderRadius: '18px', overflow: 'hidden', background: '#fbf7f4', marginBottom: '12px' }}>
-                    {rel.images && rel.images[0] ? (
-                      <img src={rel.images[0]} alt={rel.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : '🧸'}
-                  </div>
-                  <div style={{ display: 'flex', gap: '6px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--primary-color)', fontWeight: '700', background: '#fff3e0', padding: '3px 10px', borderRadius: '12px' }}>{rel.ageRange}</span>
-                    {rel.location && (
-                      <span style={{ fontSize: '11px', color: '#059669', fontWeight: '700', background: '#ecfdf5', padding: '3px 10px', borderRadius: '12px' }}>📍 {rel.location}</span>
-                    )}
-                  </div>
-                  <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#2d2520', margin: '0 0 6px 0', lineHeight: '1.4' }}>{rel.name}</h4>
-                  <div style={{ color: '#f59e0b', fontSize: '12px', fontWeight: '700', marginBottom: '8px' }}>
-                    ★ {rel.rating?.avg > 0 ? rel.rating.avg.toFixed(1) : '5.0'} ({rel.rating?.count || 0})
-                  </div>
+                  <Typography.Text strong>{owner.name || 'Thành viên ToyShare'}</Typography.Text>
+                  {owner.rating?.count > 0 && (
+                    <div style={{ fontSize: 13, color: '#8a776a' }}>★ {owner.rating.avg.toFixed(1)} uy tín · {owner.rating.count} đánh giá</div>
+                  )}
                 </div>
+              </Flex>
+              {viewOwner && owner._id && (
+                <Button onClick={() => viewOwner(owner._id)}>Xem trang cá nhân</Button>
+              )}
+            </Flex>
+          </Card>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px dashed #f1eae4' }}>
-                  <span style={{ fontSize: '12px', color: '#8a776a' }}>Tiền cọc:</span>
-                  <strong style={{ color: 'var(--primary-color)', fontSize: '15px' }}>{(rel.depositRequired || 0).toLocaleString()}đ</strong>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+          {canBorrow ? (
+            <Button type="primary" size="large" block onClick={handleBorrowClick}>Gửi yêu cầu mượn</Button>
+          ) : isOwnToy ? (
+            <Alert type="info" showIcon message="Bạn là chủ sở hữu của món đồ chơi này." />
+          ) : (
+            <Alert type="warning" showIcon message="Đồ chơi đang được mượn. Bấm yêu thích để nhận thông báo khi sẵn sàng." />
+          )}
+        </Col>
+      </Row>
+
+      <Divider />
+
+      {/* Nhận xét */}
+      <Typography.Title level={4}>Nhận xét & đánh giá ({reviews.length})</Typography.Title>
+      {reviews.length === 0 ? (
+        <Empty description="Chưa có đánh giá nào cho món đồ chơi này." style={{ padding: '32px 0' }} />
+      ) : (
+        <Row gutter={[16, 16]}>
+          {reviews.map(rev => (
+            <Col xs={24} md={12} key={rev._id}>
+              <Card styles={{ body: { padding: 18 } }}>
+                <Flex justify="space-between" align="center" style={{ marginBottom: 8 }}>
+                  <Typography.Text strong>{rev.reviewerId?.name || 'Phụ huynh'}</Typography.Text>
+                  <Rate disabled value={rev.rating} style={{ fontSize: 13, color: MANGO }} />
+                </Flex>
+                <Typography.Paragraph style={{ margin: 0, color: '#52473f' }}>{rev.comment}</Typography.Paragraph>
+                <Typography.Text type="secondary" style={{ fontSize: 11 }}>
+                  {new Date(rev.createdAt).toLocaleDateString('vi-VN')}
+                </Typography.Text>
+              </Card>
+            </Col>
+          ))}
+        </Row>
       )}
 
-      {/* MODAL MƯỢN ĐỒ CHƠI */}
+      {/* Liên quan */}
+      {relatedToys.length > 0 && (
+        <>
+          <Divider />
+          <Typography.Title level={4}>Đồ chơi tương tự</Typography.Title>
+          <Row gutter={[16, 20]}>
+            {relatedToys.map(rel => (
+              <Col key={rel._id} xs={12} sm={8} md={6} lg={6} xl={4}>
+                <Card hoverable styles={{ body: { padding: 14 } }}
+                  onClick={() => { viewToyDetail?.(rel._id); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  cover={
+                    <div style={{ aspectRatio: '1/1', background: '#f1f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {rel.images?.[0] ? <img src={rel.images[0]} alt={rel.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 44 }}>🧸</span>}
+                    </div>
+                  }>
+                  <div style={{ fontWeight: 600, fontSize: 14, minHeight: 38, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{rel.name}</div>
+                  <Flex align="center" gap={4} style={{ margin: '6px 0' }}>
+                    <span style={{ color: MANGO }}>★</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{rel.rating?.avg > 0 ? rel.rating.avg.toFixed(1) : '5.0'}</span>
+                  </Flex>
+                  <strong style={{ color: 'var(--color-foreground)' }}>{(rel.depositRequired || 0).toLocaleString()}đ</strong>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </>
+      )}
+
       {showBorrow && (
         <BorrowRequestModal
           isOpen={showBorrow}
           onClose={() => setShowBorrow(false)}
           toy={toy}
           user={user}
-          onBorrowSuccess={() => {
-            showToast('Đã gửi yêu cầu mượn thành công!', 'success');
-            if (setPage) setPage('requests');
-          }}
+          onBorrowSuccess={() => { showToast('Đã gửi yêu cầu mượn thành công!', 'success'); setPage?.('requests'); }}
           showToast={showToast}
         />
       )}
-
-      {/* TOAST THÔNG BÁO */}
-      {toast && (
-        <div style={{
-          position: 'fixed', bottom: '24px', right: '24px', padding: '14px 22px', borderRadius: '12px',
-          background: toast.type === 'error' ? '#ef4444' : '#16a34a', color: '#fff', fontSize: '14px',
-          fontWeight: '600', boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 9999
-        }}>
-          {toast.message}
-        </div>
-      )}
-
     </div>
   );
 }

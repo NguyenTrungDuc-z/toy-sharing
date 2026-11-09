@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import BorrowRequestModal from './BorrowRequestModal';
 import ToyReviewsModal from './ToyReviewsModal';
+import { VIETNAM_REGIONS } from '../constants/vietnamLocations';
 
 export default function Home({ user, setPage, viewToyDetail }) {
   const [toys, setToys] = useState([]);
@@ -28,7 +29,7 @@ export default function Home({ user, setPage, viewToyDetail }) {
     let active = true;
     const params = { page: currentPage, limit: 12, sort };
     if (searchTerm.trim()) params.search = searchTerm.trim();
-    if (filterLocation.trim()) params.location = filterLocation.trim();
+    if (filterLocation.trim() && filterLocation !== 'all') params.location = filterLocation.trim();
     if (filterCategory !== 'all' && filterCategory !== 'Khác') params.category = filterCategory;
 
     axios.get('http://localhost:5000/api/toys', { params })
@@ -162,7 +163,9 @@ export default function Home({ user, setPage, viewToyDetail }) {
       }
     }
     
-    return matchName && matchAge && matchCategory;
+    const matchLocation = !filterLocation || filterLocation === 'all' || (toy.location && toy.location.toLowerCase().includes(filterLocation.toLowerCase()));
+
+    return matchName && matchAge && matchCategory && matchLocation;
   });
 
   if (loading) return <div style={{ textAlign: 'center', padding: '100px', color: 'var(--text-muted)' }}>Đang tải thế giới đồ chơi...</div>;
@@ -334,9 +337,35 @@ export default function Home({ user, setPage, viewToyDetail }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
           <h2 style={{ fontSize: '24px', borderLeft: '6px solid var(--primary-color)', paddingLeft: '15px' }}>Đồ chơi mới cập nhật</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '14px' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500' }}>
             📍 Khu vực
-            <input value={filterLocation} onChange={event => { setCurrentPage(1); setFilterLocation(event.target.value); }} placeholder="Nhập khu vực..." style={{ padding: '10px 12px', border: '1px solid #ebdcd0', borderRadius: '10px', background: '#fff', color: 'var(--text-main)', width: '160px' }} />
+            <select
+              value={filterLocation}
+              onChange={event => {
+                setCurrentPage(1);
+                setFilterLocation(event.target.value);
+              }}
+              style={{
+                padding: '10px 14px',
+                border: '1px solid #ebdcd0',
+                borderRadius: '10px',
+                background: '#fff',
+                color: 'var(--text-main)',
+                fontWeight: '600',
+                cursor: 'pointer',
+                outline: 'none',
+                minWidth: '180px'
+              }}
+            >
+              <option value="all">📍 Toàn quốc (Tất cả)</option>
+              {VIETNAM_REGIONS.map(reg => (
+                <optgroup key={reg.region} label={reg.region}>
+                  {reg.provinces.map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-muted)', fontSize: '14px' }}>
             Sắp xếp
@@ -372,14 +401,18 @@ export default function Home({ user, setPage, viewToyDetail }) {
                       toy.category === 'Hành động' ? '🏎️' : toy.category === 'Xếp hình' ? '🧩' : '🧸'
                     )}
                   </div>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '11px', color: 'var(--primary-color)', fontWeight: '700', backgroundColor: '#fff3e0', padding: '4px 12px', borderRadius: '20px' }}>
                       {toy.ageRange && (toy.ageRange.includes('tuổi') || toy.ageRange.includes('tháng')) ? toy.ageRange : `${toy.ageRange} tuổi`}
                     </span>
                     <span style={{ fontSize: '11px', color: '#4f46e5', fontWeight: '700', backgroundColor: '#eeeeff', padding: '4px 12px', borderRadius: '20px' }}>
                       {toy.category}
                     </span>
-
+                    {toy.location && (
+                      <span style={{ fontSize: '11px', color: '#059669', fontWeight: '700', backgroundColor: '#ecfdf5', padding: '4px 12px', borderRadius: '20px' }}>
+                        📍 {toy.location}
+                      </span>
+                    )}
                   </div>
                   <h3 onClick={() => viewToyDetail && viewToyDetail(toy._id)} style={{ marginTop: '12px', marginBottom: '4px', fontSize: '18px', fontWeight: '600', cursor: 'pointer' }}>{toy.name}</h3>
                   <div 

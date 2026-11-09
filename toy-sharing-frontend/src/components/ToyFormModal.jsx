@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { VIETNAM_REGIONS } from '../constants/vietnamLocations';
 
 export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) {
   const [formData, setFormData] = useState({
@@ -222,12 +223,21 @@ export default function ToyFormModal({ isOpen, onClose, onSubmit, editingToy }) 
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#7c6e65', marginBottom: '6px' }}>📍 Khu vực</label>
-                <input
-                  type="text" placeholder="Ví dụ: Quận 1, TP.HCM"
-                  value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  style={{ width: '100%', padding: '14px 18px', borderRadius: '20px', border: '1px solid #eaedd9', backgroundColor: '#fffbf7', outline: 'none', fontSize: '14px' }}
-                />
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#7c6e65', marginBottom: '6px' }}>📍 Khu vực (Tỉnh/Thành phố)</label>
+                <select
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  style={{ width: '100%', padding: '14px 18px', borderRadius: '20px', border: '1px solid #eaedd9', backgroundColor: '#fffbf7', outline: 'none', fontSize: '14px', cursor: 'pointer' }}
+                >
+                  <option value="">-- Chọn Tỉnh / Thành phố --</option>
+                  {VIETNAM_REGIONS.map(reg => (
+                    <optgroup key={reg.region} label={reg.region}>
+                      {reg.provinces.map(p => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
             </div>
 

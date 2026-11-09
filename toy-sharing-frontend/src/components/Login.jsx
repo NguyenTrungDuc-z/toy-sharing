@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import GoogleLoginButton from './GoogleLoginButton';
 
 
 export default function Login({ setPage, setUser }) {
@@ -215,30 +216,17 @@ export default function Login({ setPage, setUser }) {
         </div>
 
        
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-           <button
-             onClick={() => showToast('Đăng nhập Google sắp ra mắt! Cần cấu hình OAuth.', 'info')}
-             title="Sắp ra mắt"
-             style={{
-               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px',
-               border: '1px solid #e2d8cf', borderRadius: '12px', backgroundColor: '#fff',
-               fontWeight: '600', fontSize: '13px', color: '#a19286', cursor: 'not-allowed', opacity: 0.7
-             }}
-           >
-             <span>🌐</span> Google
-           </button>
-           <button
-             onClick={() => showToast('Đăng nhập Facebook sắp ra mắt! Cần cấu hình OAuth.', 'info')}
-             title="Sắp ra mắt"
-             style={{
-               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px',
-               border: 'none', borderRadius: '12px', backgroundColor: '#1877f2',
-               fontWeight: '600', fontSize: '13px', color: '#fff', cursor: 'not-allowed', opacity: 0.7
-             }}
-           >
-             <span>🔹</span> Facebook
-           </button>
-        </div>
+        <GoogleLoginButton
+          showToast={showToast}
+          onLogin={(u) => {
+            if (setUser) setUser(u);
+            if (u?.role === 'admin') {
+              setPage('admin-dashboard');
+            } else {
+              setPage('home');
+            }
+          }}
+        />
 
         {/* Link chuyển đổi sang màn Đăng ký */}
         <p style={{ textAlign: 'center', marginTop: '35px', fontSize: '13px', color: '#7c6e65' }}>

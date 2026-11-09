@@ -1,7 +1,17 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Hàm tạo JWT dùng chung
+const signToken = (user) => jwt.sign(
+    { userId: user._id, tokenVersion: user.tokenVersion || 0 },
+    process.env.JWT_SECRET || 'toyshare_secret',
+    { expiresIn: '1d' }
+);
 
 // 1. API ĐĂNG KÝ (Register)
 exports.register = async (req, res) => {
@@ -97,6 +107,80 @@ exports.login = async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server khi đăng nhập', error: err.message });
+    }
+};
+
+// 2b. API ĐĂNG NHẬP BẰNG GOOGLE (Google OAuth)
+exports.googleLogin = async (req, res) => {
+    try {
+        const { credential } = req.body; // ID token từ Google Identity Services
+        if (!credential) {
+            return res.status(400).json({ message: 'Thiếu Google credential!' });
+        }
+        if (!process.env.GOOGLE_CLIENT_ID) {
+            return res.status(503).json({ message: 'Đăng nhập Google chưa được cấu hình trên máy chủ (thiếu GOOGLE_CLIENT_ID).' });
+        }
+
+        // Xác thực ID token với Google
+        let payload;
+        try {
+            const ticket = await googleClient.verifyIdToken({
+                idToken: credential,
+                audience: process.env.GOOGLE_CLIENT_ID
+            });
+            payload = ticket.getPayload();
+        } catch (err) {
+            return res.status(401).json({ message: 'Google credential không hợp lệ!' });
+        }
+
+        const { sub: googleId, email, email_verified, name, picture } = payload;
+        if (!email) {
+            return res.status(400).json({ message: 'Không lấy được email từ Google!' });
+        }
+        if (email_verified === false) {
+            return res.status(400).json({ message: 'Email Google chưa được xác minh!' });
+        }
+
+        // Tìm theo googleId hoặc email; nếu chưa có thì tạo mới
+        let user = await User.findOne({ $or: [{ googleId }, { email }] });
+
+        if (!user) {
+            user = await User.create({
+                name: name || email.split('@')[0],
+                email,
+                googleId,
+                authProvider: 'google',
+                avatar: picture || '',
+                role: 'user',
+                status: 'active'
+            });
+        } else {
+            // Liên kết googleId nếu tài khoản email đã tồn tại (đăng ký local trước đó)
+            let changed = false;
+            if (!user.googleId) { user.googleId = googleId; changed = true; }
+            if (!user.avatar && picture) { user.avatar = picture; changed = true; }
+            if (changed) await user.save();
+        }
+
+        if (user.status === 'blocked') {
+            return res.status(403).json({ message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!' });
+        }
+
+        const token = signToken(user);
+        res.status(200).json({
+            message: 'Đăng nhập Google thành công!',
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                avatar: user.avatar,
+                role: user.role || 'user'
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi server khi đăng nhập Google', error: err.message });
     }
 };
 

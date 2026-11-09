@@ -80,15 +80,15 @@ async function generate() {
   ];
 
   const groupA = [
-    ['A1', 'Trang chi tiết đồ chơi (ToyDetail)', 'API GET /toys/:id đã có, cần UI: ảnh lớn, thông tin owner, reviews, nút mượn', 'Medium', 'Not started'],
-    ['A2', 'Điểm uy tín thực (real rating)', 'MyToys.jsx hardcode 4.9/5.0 → lấy rating thực từ User model', 'Low', 'Not started'],
-    ['A3', 'Quên mật khẩu (Forgot Password)', 'Login chỉ show toast → flow reset qua nodemailer. Dev: log link console', 'High', 'Not started'],
-    ['A4', 'Hiện/ẩn mật khẩu', 'Icon mắt Login.jsx không hoạt động → toggle type password/text', 'Low', 'Not started'],
-    ['A5', 'Upload nhiều ảnh (3-5 ảnh)', 'Form giới hạn 1 ảnh, images[] đã là array → multi upload + preview', 'Medium', 'Not started'],
-    ['A6', 'Thêm Vị trí (Location)', 'Toy.location có trong schema nhưng form không set → thêm field + filter Home', 'Medium', 'Not started'],
-    ['A7', 'Upload avatar (file)', 'Profile chỉ nhận URL → thêm upload file base64 như ToyFormModal', 'Low', 'Not started'],
-    ['A8', 'Tình trạng "Như mới" (like_new)', 'Form có "Như mới" nhưng save thành "new" → thêm like_new vào enum', 'Low', 'Not started'],
-    ['A9', 'Chart labels động', 'Dashboard labels hardcode → backend trả labels cùng chartData', 'Low', 'Not started'],
+    ['A1', 'Trang chi tiết đồ chơi (ToyDetail)', 'API GET /toys/:id đã có, UI: ảnh lớn, thông tin owner, reviews, nút mượn', 'Medium', 'Done'],
+    ['A2', 'Điểm uy tín thực (real rating)', 'MyToys.jsx tính rating thực từ User model', 'Low', 'Done'],
+    ['A3', 'Quên mật khẩu (Forgot Password)', 'Flow reset qua Nodemailer gửi Gmail App Password thật + Dev mode dự phòng', 'High', 'Done'],
+    ['A4', 'Hiện/ẩn mật khẩu', 'Icon mắt toggle type password/text tiện lợi', 'Low', 'Done'],
+    ['A5', 'Upload nhiều ảnh (3-5 ảnh)', 'Form multi-upload kèm preview ảnh và trình xem ảnh lớn', 'Medium', 'Done'],
+    ['A6', 'Thêm Vị trí (Location)', 'Thêm vị trí đồ chơi vào form + bộ lọc location trang Home', 'Medium', 'Done'],
+    ['A7', 'Upload avatar (file)', 'Upload file ảnh đại diện base64 trực tiếp trên Profile', 'Low', 'Done'],
+    ['A8', 'Tình trạng "Như mới" (like_new)', 'Đã bổ sung like_new vào Toy model enum và giao diện bộ lọc', 'Low', 'Done'],
+    ['A9', 'Chart labels động', 'Dashboard labels hiển thị tuần/ngày thực từ backend', 'Low', 'Done'],
   ];
 
   groupA.forEach(row => ws2.addRow({ id: row[0], feature: row[1], desc: row[2], effort: row[3], status: row[4] }));
@@ -97,6 +97,11 @@ async function generate() {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F59E0B' } };
     cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 };
     cell.alignment = { vertical: 'middle' };
+  });
+  ws2.getColumn('status').eachCell((cell, rowNumber) => {
+    if (rowNumber > 1) {
+      cell.font = { bold: true, color: { argb: '16A34A' } };
+    }
   });
 
   // ============ SHEET 3: Group B ============
@@ -113,12 +118,12 @@ async function generate() {
   ];
 
   const groupB = [
-    ['B1', 'Thông báo trong app (Notifications)', 'Model Notification + icon chuông + badge unread. Trigger: mượn/duyệt/từ chối/gia hạn/trả/quá hạn', 'High', 'Not started'],
-    ['B2', 'Thông báo toy yêu thích sẵn sàng', 'Khi toy trong favorites chuyển available → notify user đã thích', 'Medium', 'Not started'],
-    ['B3', 'Trang hồ sơ công khai (Owner Profile)', 'Xem toys, rating, reviews của 1 user. Link từ ToyDetail', 'Medium', 'Not started'],
-    ['B4', 'Nhắn tin theo đơn mượn (Messaging)', 'Model Message theo borrowRequestId, chat owner ↔ borrower', 'High', 'Not started'],
-    ['B5', 'Thống kê cá nhân trên Profile', 'Số đồ đã mượn, cho mượn, tỉ lệ trả đúng hạn, tổng reviews', 'Medium', 'Not started'],
-    ['B6', 'Admin: Quản lý tất cả đơn mượn', 'Xem toàn bộ borrows + filter quá hạn + thống kê category/status', 'High', 'Not started'],
+    ['B1', 'Thông báo trong app (Notifications)', 'Model Notification + icon chuông + badge realtime Socket.IO', 'High', 'Done'],
+    ['B2', 'Thông báo toy yêu thích sẵn sàng', 'Khi toy trong favorites chuyển available → notify user đã thích', 'Medium', 'Done'],
+    ['B3', 'Trang hồ sơ công khai (Owner Profile)', 'Xem toys, rating, reviews của 1 user. Link từ ToyDetail', 'Medium', 'Done'],
+    ['B4', 'Nhắn tin theo đơn mượn (Messaging)', 'Model Message theo borrowRequestId, chat realtime owner ↔ borrower', 'High', 'Done'],
+    ['B5', 'Thống kê cá nhân trên Profile', 'Số đồ đã mượn, cho mượn, tỉ lệ trả đúng hạn, tổng reviews', 'Medium', 'Done'],
+    ['B6', 'Admin: Quản lý tất cả đơn mượn', 'Xem toàn bộ borrows + filter quá hạn + thống kê category/status', 'High', 'Done'],
   ];
 
   groupB.forEach(row => ws3.addRow({ id: row[0], feature: row[1], desc: row[2], effort: row[3], status: row[4] }));
@@ -127,6 +132,11 @@ async function generate() {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '4F46E5' } };
     cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 };
     cell.alignment = { vertical: 'middle' };
+  });
+  ws3.getColumn('status').eachCell((cell, rowNumber) => {
+    if (rowNumber > 1) {
+      cell.font = { bold: true, color: { argb: '16A34A' } };
+    }
   });
 
   // ============ SHEET 4: Group C ============
@@ -144,9 +154,9 @@ async function generate() {
   ];
 
   const groupC = [
-    ['C1', 'Google / Facebook Login (OAuth)', 'Đăng nhập qua Google/Facebook, nếu không có credentials thì xóa nút giả', 'OAuth client IDs', 'High', 'Not started'],
-    ['C2', 'Thanh toán cọc online', 'Tích hợp VNPay/MoMo sandbox cho tiền cọc đồ chơi', 'VNPay/MoMo sandbox keys', 'Very High', 'Not started'],
-    ['C3', 'Realtime (Socket.IO)', 'WebSocket cho chat realtime + push notifications', 'Socket.IO setup', 'High', 'Not started'],
+    ['C1', 'Google Login (OAuth)', 'Đăng nhập Google qua google-auth-library + UI Google Login', 'Google Client ID (.env)', 'High', 'Done'],
+    ['C2', 'Thanh toán cọc online (VietQR Escrow & Dispute)', 'Sinh VietQR động nạp cọc Admin trung gian + quy trình khiếu nại ảnh hư hỏng 3 bước', 'ADMIN_BANK (.env)', 'Very High', 'Done'],
+    ['C3', 'Realtime (Socket.IO)', 'WebSocket cho chat realtime + push notifications tức thời', 'Socket.IO', 'High', 'Done'],
   ];
 
   groupC.forEach(row => ws4.addRow({ id: row[0], feature: row[1], desc: row[2], dep: row[3], effort: row[4], status: row[5] }));
@@ -155,6 +165,11 @@ async function generate() {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'EF4444' } };
     cell.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 };
     cell.alignment = { vertical: 'middle' };
+  });
+  ws4.getColumn('status').eachCell((cell, rowNumber) => {
+    if (rowNumber > 1) {
+      cell.font = { bold: true, color: { argb: '16A34A' } };
+    }
   });
 
   // ============ SHEET 5: Summary ============
@@ -165,14 +180,15 @@ async function generate() {
   ws5.columns = [
     { header: 'Nhóm', key: 'group', width: 35 },
     { header: 'Số lượng', key: 'count', width: 12 },
-    { header: 'Mô tả', key: 'desc', width: 70 }
+    { header: 'Mô tả', key: 'desc', width: 70 },
+    { header: 'Trạng thái', key: 'status', width: 15 }
   ];
 
-  ws5.addRow({ group: 'Tính năng đã có (Existing)', count: 30, desc: 'Đã hoàn thành - Guest, Owner, Borrower, Admin, System' });
-  ws5.addRow({ group: 'Nhóm A - Hoàn thiện UI có sẵn', count: 9, desc: 'Ưu tiên cao, effort thấp-trung bình, hiệu quả ngay' });
-  ws5.addRow({ group: 'Nhóm B - Module mới', count: 6, desc: 'Notifications, Messaging, Public Profile, Stats, Admin borrows' });
-  ws5.addRow({ group: 'Nhóm C - Dịch vụ bên ngoài', count: 3, desc: 'OAuth, Payment, Socket.IO - cần credentials/setup riêng' });
-  ws5.addRow({ group: 'TỔNG CỘNG', count: 48, desc: '30 đã có + 18 đề xuất mới' });
+  ws5.addRow({ group: 'Tính năng đã có (Existing)', count: 30, desc: 'Đã hoàn thành - Guest, Owner, Borrower, Admin, System', status: '30/30 Done' });
+  ws5.addRow({ group: 'Nhóm A - Hoàn thiện UI có sẵn', count: 9, desc: 'Ưu tiên cao, effort thấp-trung bình, hiệu quả ngay', status: '9/9 Done' });
+  ws5.addRow({ group: 'Nhóm B - Module mới', count: 6, desc: 'Notifications, Messaging, Public Profile, Stats, Admin borrows', status: '6/6 Done' });
+  ws5.addRow({ group: 'Nhóm C - Dịch vụ bên ngoài', count: 3, desc: 'Google OAuth, VietQR Escrow & Dispute, Socket.IO Realtime', status: '3/3 Done' });
+  ws5.addRow({ group: 'TỔNG CỘNG', count: 48, desc: 'Đã hoàn thiện toàn bộ tính năng theo yêu cầu', status: '48/48 (100%)' });
 
   ws5.getRow(1).eachCell(cell => {
     cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '85581A' } };
@@ -185,8 +201,18 @@ async function generate() {
   });
 
   const outPath = path.join(__dirname, 'toyshare-features.xlsx');
-  await wb.xlsx.writeFile(outPath);
-  console.log('XLSX saved:', outPath);
+  try {
+    await wb.xlsx.writeFile(outPath);
+    console.log('XLSX saved:', outPath);
+  } catch (err) {
+    if (err.code === 'EBUSY') {
+      const altPath = path.join(__dirname, 'toyshare-features-v2.xlsx');
+      await wb.xlsx.writeFile(altPath);
+      console.log('toyshare-features.xlsx đang mở trong Excel. Đã lưu bản cập nhật ra:', altPath);
+    } else {
+      throw err;
+    }
+  }
 }
 
 generate().catch(err => { console.error(err); process.exit(1); });

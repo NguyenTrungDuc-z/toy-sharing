@@ -31,6 +31,7 @@ export default function App() {
   // ID được chọn để xem chi tiết (đồ chơi / hồ sơ chủ sở hữu)
   const [selectedToyId, setSelectedToyId] = useState(null);
   const [selectedOwnerId, setSelectedOwnerId] = useState(null);
+  const [resetParams, setResetParams] = useState({ token: '', email: '' });
 
   const viewToyDetail = (toyId) => {
     setSelectedToyId(toyId);
@@ -41,8 +42,24 @@ export default function App() {
     navigateTo('owner-profile');
   };
 
-  // Khi ứng dụng chạy, kiểm tra xem người dùng đã đăng nhập trước đó chưa
+  // Khi ứng dụng chạy, kiểm tra xem người dùng đã đăng nhập trước đó chưa hoặc có params từ email không
   useEffect(() => {
+    // 💡 Hỗ trợ link reset password từ email: ?page=forgot-password&token=...&email=...
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlPage = urlParams.get('page');
+      const urlToken = urlParams.get('token');
+      const urlEmail = urlParams.get('email');
+
+      if (urlPage === 'forgot-password' || (urlToken && urlEmail)) {
+        setPage('forgot-password');
+        setResetParams({ token: urlToken || '', email: urlEmail || '' });
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+
     const savedUser = localStorage.getItem('user');
     const savedRole = localStorage.getItem('role');
     const savedPage = localStorage.getItem('currentPage'); // 💡 Mẹo: Nhớ trang Admin đang đứng trước khi F5
@@ -144,7 +161,13 @@ export default function App() {
           }
         }} />}
         {page === 'register' && <Register setPage={navigateTo} />}
-        {page === 'forgot-password' && <ForgotPassword setPage={navigateTo} />}
+        {page === 'forgot-password' && (
+          <ForgotPassword
+            setPage={navigateTo}
+            initialToken={resetParams.token}
+            initialEmail={resetParams.email}
+          />
+        )}
         
         {/* 🛡️ KHỐI TRANG CỦA ADMIN: Chỉ mở khi đúng quyền admin */}
         {page === 'admin-dashboard' && user?.role === 'admin' && (

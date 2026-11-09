@@ -26,5 +26,6 @@ pnpm-debug.log*
 # Editor and OS files
 .DS_Store
 Thumbs.db
+~$*.xlsx
 .vscode/
 .idea/

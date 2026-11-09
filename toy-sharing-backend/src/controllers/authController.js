@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const emailService = require('../services/emailService');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -296,7 +297,7 @@ exports.changePassword = async (req, res) => {
     }
 };
 
-// 8. API QUÊN MẬT KHẨU (Forgot Password) - tạo token đặt lại
+// 8. API QUÊN MẬT KHẨU (Forgot Password) - tạo token và gửi email thật qua Nodemailer (Gmail)
 exports.forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -305,9 +306,11 @@ exports.forgotPassword = async (req, res) => {
         }
 
         const user = await User.findOne({ email });
-        // Luôn trả về thành công để tránh dò email tồn tại
+        // Luôn trả về thông báo chung để tránh dò email tồn tại
         if (!user) {
-            return res.status(200).json({ message: 'Nếu email tồn tại, link đặt lại mật khẩu đã được gửi.' });
+            return res.status(200).json({
+                message: 'Nếu email tồn tại trong hệ thống, mã xác nhận đặt lại mật khẩu đã được gửi đến hòm thư của bạn.'
+            });
         }
 
         const rawToken = crypto.randomBytes(32).toString('hex');
@@ -316,14 +319,32 @@ exports.forgotPassword = async (req, res) => {
         user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
         await user.save();
 
-        // TODO: Khi có SMTP, gửi email chứa link. Hiện tại dev mode trả token trực tiếp.
-        const resetLink = `reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const resetLink = `${frontendUrl}/?page=forgot-password&token=${rawToken}&email=${encodeURIComponent(email)}`;
         console.log(`[FORGOT-PASSWORD] Token đặt lại cho ${email}: ${rawToken}`);
 
+        // Gửi email thật qua Nodemailer (Gmail)
+        const emailResult = await emailService.sendResetPasswordEmail({
+            to: email,
+            token: rawToken,
+            resetUrl: resetLink,
+            userName: user.name
+        });
+
+        if (emailResult.sent) {
+            return res.status(200).json({
+                message: 'Mã xác nhận đặt lại mật khẩu đã được gửi đến email của bạn! Vui lòng kiểm tra hộp thư (cả thư mục Spam/Rác).',
+                emailSent: true
+            });
+        }
+
+        // Trường hợp EMAIL_USER / EMAIL_PASS chưa được cấu hình trong .env:
+        // Cung cấp token trực tiếp để không làm gián đoạn kiểm thử và phát triển
         res.status(200).json({
-            message: 'Nếu email tồn tại, link đặt lại mật khẩu đã được tạo.',
+            message: 'Chưa cấu hình Gmail trong file .env (EMAIL_USER / EMAIL_PASS). Mã token được cấp bên dưới để kiểm thử.',
             devResetToken: rawToken,
-            devResetLink: resetLink
+            devResetLink: resetLink,
+            emailSent: false
         });
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server khi xử lý quên mật khẩu', error: err.message });

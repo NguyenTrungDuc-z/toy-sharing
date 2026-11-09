@@ -41,34 +41,34 @@
     {
       "section": "GROUP A - Hoàn thiện UI có sẵn (ưu tiên cao, nhanh)",
       "features": [
-        { "id": "A1", "feature": "Trang chi tiết đồ chơi (ToyDetail page)", "description": "API GET /toys/:id đã có, cần UI hiển thị ảnh lớn, thông tin owner, reviews, nút mượn", "effort": "medium", "status": "not-started" },
-        { "id": "A2", "feature": "Điểm uy tín thực (real reputation score)", "description": "MyToys.jsx hardcode 4.9/5.0, cần lấy rating thực từ User model", "effort": "low", "status": "not-started" },
-        { "id": "A3", "feature": "Quên mật khẩu (Forgot Password)", "description": "Login đang chỉ show toast, cần flow reset qua email (nodemailer). Dev mode: log link ra console", "effort": "high", "status": "not-started" },
-        { "id": "A4", "feature": "Hiện/ẩn mật khẩu (Toggle password visibility)", "description": "Icon mắt trong Login.jsx không hoạt động, cần wire lên toggle type password/text", "effort": "low", "status": "not-started" },
-        { "id": "A5", "feature": "Upload nhiều ảnh (Multiple images)", "description": "Form giới hạn 1 ảnh, images[] đã là array. Cho upload 3-5 ảnh với preview", "effort": "medium", "status": "not-started" },
-        { "id": "A6", "feature": "Thêm Vị trí (Location filter)", "description": "Schema Toy.location đã có nhưng form không set. Thêm vào form + bộ lọc location trên Home", "effort": "medium", "status": "not-started" },
-        { "id": "A7", "feature": "Upload avatar (file upload)", "description": "Profile chỉ nhận URL, thêm upload file base64 giống ToyFormModal", "effort": "low", "status": "not-started" },
-        { "id": "A8", "feature": "Thêm tình trạng 'Như mới' (like_new)", "description": "Form có option 'Như mới' nhưng backend lưu 'new'. Thêm like_new vào Toy schema enum", "effort": "low", "status": "not-started" },
-        { "id": "A9", "feature": "Chart labels động (dynamic chart labels)", "description": "Dashboard chart labels hardcode ['Ngày 1','Ngày 10',...], backend cần trả labels cùng data", "effort": "low", "status": "not-started" }
+        { "id": "A1", "feature": "Trang chi tiết đồ chơi (ToyDetail page)", "description": "API GET /toys/:id, UI hiển thị ảnh lớn, thông tin owner, reviews, nút mượn", "effort": "medium", "status": "done" },
+        { "id": "A2", "feature": "Điểm uy tín thực (real reputation score)", "description": "Lấy rating thực từ User model và hiển thị trên giao diện", "effort": "low", "status": "done" },
+        { "id": "A3", "feature": "Quên mật khẩu (Forgot Password)", "description": "Flow reset qua email thật bằng Nodemailer (Gmail App Password) + Dev fallback", "effort": "high", "status": "done" },
+        { "id": "A4", "feature": "Hiện/ẩn mật khẩu (Toggle password visibility)", "description": "Icon mắt toggle type password/text tiện lợi", "effort": "low", "status": "done" },
+        { "id": "A5", "feature": "Upload nhiều ảnh (Multiple images)", "description": "Cho upload 3-5 ảnh kèm preview và xem carousel", "effort": "medium", "status": "done" },
+        { "id": "A6", "feature": "Thêm Vị trí (Location filter)", "description": "Thêm trường vị trí vào form + bộ lọc location trên Home", "effort": "medium", "status": "done" },
+        { "id": "A7", "feature": "Upload avatar (file upload)", "description": "Thêm upload file avatar base64 trực tiếp trên Profile", "effort": "low", "status": "done" },
+        { "id": "A8", "feature": "Thêm tình trạng 'Như mới' (like_new)", "description": "Thêm like_new vào Toy schema enum và đồng bộ bộ lọc", "effort": "low", "status": "done" },
+        { "id": "A9", "feature": "Chart labels động (dynamic chart labels)", "description": "Dashboard chart hiển thị labels thời gian thực tế", "effort": "low", "status": "done" }
       ]
     },
     {
       "section": "GROUP B - Module mới (app đầy đặn hơn)",
       "features": [
-        { "id": "B1", "feature": "Thông báo trong app (Notifications)", "description": "Model Notification + icon chuông + badge unread. Trigger: mượn/duyệt/từ chối/gia hạn/trả/quá hạn", "effort": "high", "status": "not-started" },
-        { "id": "B2", "feature": "Thông báo toy yêu thích sẵn sàng", "description": "Khi toy trong favorites chuyển available -> tạo notification cho user đã thích", "effort": "medium", "status": "not-started" },
-        { "id": "B3", "feature": "Trang hồ sơ công khai (Public Owner Profile)", "description": "Xem toys, rating, reviews của 1 user. Link từ trang chi tiết đồ chơi", "effort": "medium", "status": "not-started" },
-        { "id": "B4", "feature": "Nhắn tin theo đơn mượn (Messaging)", "description": "Model Message theo borrowRequestId, chat giữa owner và borrower", "effort": "high", "status": "not-started" },
-        { "id": "B5", "feature": "Thống kê cá nhân trên Profile", "description": "Số đồ đã mượn, đã cho mượn, tỉ lệ trả đúng hạn, tổng reviews", "effort": "medium", "status": "not-started" },
-        { "id": "B6", "feature": "Admin: Quản lý tất cả đơn mượn", "description": "Xem toàn bộ borrows + filter quá hạn + thống kê thêm (biểu đồ theo category, status)", "effort": "high", "status": "not-started" }
+        { "id": "B1", "feature": "Thông báo trong app (Notifications)", "description": "Model Notification + icon chuông + badge realtime Socket.IO", "effort": "high", "status": "done" },
+        { "id": "B2", "feature": "Thông báo toy yêu thích sẵn sàng", "description": "Khi toy trong favorites chuyển available -> tự động tạo thông báo cho fan", "effort": "medium", "status": "done" },
+        { "id": "B3", "feature": "Trang hồ sơ công khai (Public Owner Profile)", "description": "Xem toys, rating, reviews của 1 user bất kỳ", "effort": "medium", "status": "done" },
+        { "id": "B4", "feature": "Nhắn tin theo đơn mượn (Messaging)", "description": "Chat realtime giữa chủ đồ chơi và người mượn theo từng đơn", "effort": "high", "status": "done" },
+        { "id": "B5", "feature": "Thống kê cá nhân trên Profile", "description": "Thống kê số đồ đã mượn, đã cho mượn, tỉ lệ trả đúng hạn, tổng đánh giá", "effort": "medium", "status": "done" },
+        { "id": "B6", "feature": "Admin: Quản lý tất cả đơn mượn", "description": "Xem toàn bộ đơn mượn + lọc quá hạn + thống kê phân loại", "effort": "high", "status": "done" }
       ]
     },
     {
       "section": "GROUP C - Cần dịch vụ bên ngoài",
       "features": [
-        { "id": "C1", "feature": "Google / Facebook Login (OAuth)", "description": "Cần OAuth client IDs từ Google/Facebook Developer Console. Nếu không có thì xóa nút giả", "effort": "high", "dependency": "OAuth credentials", "status": "not-started" },
-        { "id": "C2", "feature": "Thanh toán cọc online (VNPay/MoMo)", "description": "Tích hợp cổng thanh toán sandbox cho tiền cọc", "effort": "very-high", "dependency": "VNPay/MoMo sandbox keys", "status": "not-started" },
-        { "id": "C3", "feature": "Realtime (Socket.IO)", "description": "WebSocket cho chat realtime + push notifications", "effort": "high", "dependency": "Socket.IO setup", "status": "not-started" }
+        { "id": "C1", "feature": "Google Login (OAuth)", "description": "Đăng nhập một chạm bằng tài khoản Google via google-auth-library", "effort": "high", "dependency": "GOOGLE_CLIENT_ID", "status": "done" },
+        { "id": "C2", "feature": "Thanh toán cọc online (VietQR Escrow & Dispute)", "description": "Đặt cọc trung gian VietQR, đối soát khiếu nại hỏng hóc với ảnh minh chứng 3 bước", "effort": "very-high", "dependency": "ADMIN_BANK credentials", "status": "done" },
+        { "id": "C3", "feature": "Realtime (Socket.IO)", "description": "WebSocket cho chat thời gian thực và thông báo tức thời", "effort": "high", "dependency": "Socket.IO server & client", "status": "done" }
       ]
     }
   ]

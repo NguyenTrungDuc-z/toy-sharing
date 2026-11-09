@@ -6,7 +6,7 @@ const toySchema = new mongoose.Schema({
   description: { type: String },
   category: { type: String },
   ageRange: { type: String, required: true },
-  condition: { type: String, enum: ['new', 'used'], required: true },
+  condition: { type: String, enum: ['new', 'like_new', 'used'], required: true },
   images: [{ type: String }],
   status: { type: String, enum: ['available', 'borrowed', 'unavailable', 'pending', 'rejected'], default: 'pending' },
   depositRequired: { type: Number, default: 0 },

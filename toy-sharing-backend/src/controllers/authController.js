@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const User = require('../models/User');
 
 // 1. API ĐĂNG KÝ (Register)
@@ -208,6 +209,75 @@ exports.changePassword = async (req, res) => {
         res.status(200).json({ message: 'Đổi mật khẩu thành công!' });
     } catch (err) {
         res.status(500).json({ message: 'Lỗi server khi đổi mật khẩu', error: err.message });
+    }
+};
+
+// 8. API QUÊN MẬT KHẨU (Forgot Password) - tạo token đặt lại
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ message: 'Vui lòng nhập email!' });
+        }
+
+        const user = await User.findOne({ email });
+        // Luôn trả về thành công để tránh dò email tồn tại
+        if (!user) {
+            return res.status(200).json({ message: 'Nếu email tồn tại, link đặt lại mật khẩu đã được gửi.' });
+        }
+
+        const rawToken = crypto.randomBytes(32).toString('hex');
+        const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
+        user.resetPasswordToken = hashedToken;
+        user.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 phút
+        await user.save();
+
+        // TODO: Khi có SMTP, gửi email chứa link. Hiện tại dev mode trả token trực tiếp.
+        const resetLink = `reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
+        console.log(`[FORGOT-PASSWORD] Token đặt lại cho ${email}: ${rawToken}`);
+
+        res.status(200).json({
+            message: 'Nếu email tồn tại, link đặt lại mật khẩu đã được tạo.',
+            devResetToken: rawToken,
+            devResetLink: resetLink
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi server khi xử lý quên mật khẩu', error: err.message });
+    }
+};
+
+// 9. API ĐẶT LẠI MẬT KHẨU (Reset Password) - dùng token
+exports.resetPassword = async (req, res) => {
+    try {
+        const { token, email, newPassword } = req.body;
+        if (!token || !email || !newPassword) {
+            return res.status(400).json({ message: 'Thiếu thông tin đặt lại mật khẩu!' });
+        }
+        if (typeof newPassword !== 'string' || newPassword.length < 8) {
+            return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 8 ký tự!' });
+        }
+
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+        const user = await User.findOne({
+            email,
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: new Date() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Link đặt lại không hợp lệ hoặc đã hết hạn!' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        user.passwordHash = await bcrypt.hash(newPassword, salt);
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        user.tokenVersion = (user.tokenVersion || 0) + 1; // thu hồi token cũ
+        await user.save();
+
+        res.status(200).json({ message: 'Đặt lại mật khẩu thành công! Vui lòng đăng nhập lại.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Lỗi server khi đặt lại mật khẩu', error: err.message });
     }
 };
 

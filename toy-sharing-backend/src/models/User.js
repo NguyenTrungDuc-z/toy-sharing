@@ -9,6 +9,8 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String, default: "" },
   favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Toy' }],
   tokenVersion: { type: Number, default: 0 },
+  resetPasswordToken: { type: String },
+  resetPasswordExpires: { type: Date },
   rating: {
     avg: { type: Number, default: 0 },
     count: { type: Number, default: 0 }

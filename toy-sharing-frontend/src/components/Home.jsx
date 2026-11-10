@@ -7,7 +7,7 @@ import {
 import {
   HeartOutlined, HeartFilled, FlagOutlined, SafetyCertificateOutlined,
   StarFilled, EnvironmentOutlined,
-  AppstoreOutlined, ExperimentOutlined, CarOutlined, RobotOutlined, GiftOutlined,
+  AppstoreOutlined, ExperimentOutlined, CarOutlined, RobotOutlined, GiftOutlined, HighlightOutlined,
 } from '@ant-design/icons';
 import BorrowRequestModal from './BorrowRequestModal';
 import ToyReviewsModal from './ToyReviewsModal';
@@ -27,6 +27,8 @@ const categoryVisual = {
   'Giáo dục': { icon: <ExperimentOutlined />, bg: 'linear-gradient(135deg,#e8f0fe 0%,#d2e3fc 100%)' },
   'Hành động': { icon: <CarOutlined />, bg: 'linear-gradient(135deg,#fff1e6 0%,#ffe0c2 100%)' },
   'Công nghệ': { icon: <RobotOutlined />, bg: 'linear-gradient(135deg,#eef2f6 0%,#dbe3ea 100%)' },
+  'Búp bê & Thú bông': { icon: <HeartOutlined />, bg: 'linear-gradient(135deg,#fce4ec 0%,#f8bbd0 100%)' },
+  'Mỹ thuật & Sáng tạo': { icon: <HighlightOutlined />, bg: 'linear-gradient(135deg,#fff8e1 0%,#ffecb3 100%)' },
   _default: { icon: <GiftOutlined />, bg: 'linear-gradient(135deg,#fdf0e3 0%,#fbe3c9 100%)' },
 };
 
@@ -53,6 +55,8 @@ const DEFAULT_CATEGORY_OPTIONS = [
   { value: 'Giáo dục', label: 'Giáo dục' },
   { value: 'Hành động', label: 'Hành động' },
   { value: 'Công nghệ', label: 'Công nghệ' },
+  { value: 'Búp bê & Thú bông', label: 'Búp bê & Thú bông' },
+  { value: 'Mỹ thuật & Sáng tạo', label: 'Mỹ thuật & Sáng tạo' },
 ];
 
 const locationOptions = [

@@ -18,7 +18,7 @@ const URI = process.env.MONGO_URI || 'mongodb://localhost:27017/toy_sharing';
   const notifications = db.collection('notifications');
   const vouchers = db.collection('vouchers');
 
-  const toyFilter = { name: { $regex: /^(Test Toy|Toy) [a-z0-9]{3,}/ } };
+  const toyFilter = { name: { $regex: /^(Test Toy|Toy |Tblv)[a-z0-9]*/i } };
   const userFilter = { email: { $regex: /^(owner|borrower)_[a-z0-9]+(b)?@test\.com$/ } };
   const voucherFilter = { code: { $regex: /^(TEST|DBG|PER|PCT|HECHE)/ } };
 

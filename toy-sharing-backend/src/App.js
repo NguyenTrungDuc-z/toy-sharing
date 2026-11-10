@@ -63,21 +63,19 @@ app.use(['/api/auth/login', '/api/auth/register', '/api/auth/forgot-password', '
 
 async function createAdminAccount() {
     try {
-        const adminLookup = process.env.ADMIN_EMAIL || 'admin@toyshare.com';
-        const existing = await User.findOne({ email: adminLookup });
-        if (existing) {
-            if (existing.role !== 'admin') {
-                existing.role = 'admin';
-                await existing.save();
-            }
-            console.log(`Admin account already exists (${adminLookup})`);
-            return;
-        }
-
-        const adminEmail = process.env.ADMIN_EMAIL || 'admin@toyshare.com';
-        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        const adminEmail = process.env.ADMIN_EMAIL || 'admin@gmail.com';
+        const adminPassword = process.env.ADMIN_PASSWORD || 'admin';
         const salt = await bcrypt.genSalt(10);
         const hashedAdminPassword = await bcrypt.hash(adminPassword, salt);
+
+        const existing = await User.findOne({ email: adminEmail });
+        if (existing) {
+            existing.role = 'admin';
+            existing.passwordHash = hashedAdminPassword;
+            await existing.save();
+            console.log(`Admin account verified/updated (${adminEmail})`);
+            return;
+        }
 
         await User.create({
             name: 'Hệ thống Admin',
@@ -88,7 +86,7 @@ async function createAdminAccount() {
             role: 'admin',
             status: 'active'
         });
-        console.log(`Admin account created (${adminEmail}). Mật khẩu lấy từ ADMIN_PASSWORD trong .env (mặc định tạm nếu chưa đặt).`);
+        console.log(`Admin account created (${adminEmail})`);
     } catch (err) {
         console.error('Error creating admin account:', err.message);
     }

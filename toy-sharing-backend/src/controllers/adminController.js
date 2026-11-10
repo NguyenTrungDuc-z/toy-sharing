@@ -9,21 +9,92 @@ const { createNotification, notifyFavoriteAvailable } = require('../services/not
 exports.getStats = async (req, res) => {
     try {
         await autoReturnOverdueBorrows();
-        const totalUsers = await User.countDocuments();
+        const totalUsers = await User.countDocuments({ role: 'user' });
         const totalToys = await Toy.countDocuments();
-        const activeLoans = await BorrowRequest.countDocuments({ status: 'borrowing' });
+        const activeLoans = await BorrowRequest.countDocuments({ status: { $in: ['borrowing', 'overdue'] } });
         const pendingApprovals = await BorrowRequest.countDocuments({ status: 'pending' });
+        const pendingToys = await Toy.countDocuments({ status: 'pending' });
+        const totalReports = await Report.countDocuments();
 
+        // 1. Xu hướng tăng trưởng — chọn khoảng: week (7 ngày) | month (4 tuần) | year (12 tháng)
         const now = new Date();
-        const chartData = [];
-        const chartLabels = [];
-        for (let i = 3; i >= 0; i--) {
-            const cutoff = new Date(now);
-            cutoff.setDate(cutoff.getDate() - i * 7);
-            const count = await Toy.countDocuments({ createdAt: { $lte: cutoff } });
-            chartData.push(count);
-            chartLabels.push(i === 0 ? 'Hôm nay' : `${i * 7} ngày trước`);
+        const range = ['week', 'month', 'year'].includes(req.query.range) ? req.query.range : 'month';
+        const points = []; // { cutoff, label }
+        if (range === 'week') {
+            for (let i = 6; i >= 0; i--) {
+                const c = new Date(now); c.setDate(c.getDate() - i); c.setHours(23, 59, 59, 999);
+                points.push({ cutoff: c, label: i === 0 ? 'Hôm nay' : `${String(c.getDate()).padStart(2, '0')}/${String(c.getMonth() + 1).padStart(2, '0')}` });
+            }
+        } else if (range === 'year') {
+            for (let i = 11; i >= 0; i--) {
+                const c = new Date(now.getFullYear(), now.getMonth() - i + 1, 0, 23, 59, 59, 999); // cuối tháng
+                points.push({ cutoff: c, label: `T${c.getMonth() + 1}/${String(c.getFullYear()).slice(2)}` });
+            }
+        } else { // month: 5 mốc tuần gần nhất
+            for (let i = 4; i >= 0; i--) {
+                const c = new Date(now); c.setDate(c.getDate() - i * 7);
+                points.push({ cutoff: c, label: i === 0 ? 'Hôm nay' : `${i} tuần trước` });
+            }
         }
+        const chartData = [];
+        const usersTrend = [];
+        const borrowsTrend = [];
+        const chartLabels = [];
+        for (const p of points) {
+            const [tCount, uCount, bCount] = await Promise.all([
+                Toy.countDocuments({ createdAt: { $lte: p.cutoff } }),
+                User.countDocuments({ role: 'user', createdAt: { $lte: p.cutoff } }),
+                BorrowRequest.countDocuments({ createdAt: { $lte: p.cutoff } }),
+            ]);
+            chartData.push(tCount);
+            usersTrend.push(uCount);
+            borrowsTrend.push(bCount);
+            chartLabels.push(p.label);
+        }
+
+        // 2. Cơ cấu đồ chơi theo danh mục (Doughnut Chart)
+        const catAgg = await Toy.aggregate([
+            { $group: { _id: '$category', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+        ]);
+        const categoryLabels = catAgg.map(c => c._id || 'Khác');
+        const categoryData = catAgg.map(c => c.count);
+
+        // 3. Phân bố trạng thái mượn (Bar Chart)
+        const statusMap = {
+            'returned': 'Đã hoàn tất',
+            'borrowing': 'Đang mượn',
+            'pending': 'Chờ duyệt',
+            'overdue': 'Quá hạn',
+            'rejected': 'Bị từ chối',
+            'cancelled': 'Đã hủy'
+        };
+        const statusAgg = await BorrowRequest.aggregate([
+            { $group: { _id: '$status', count: { $sum: 1 } } }
+        ]);
+        const borrowStatusLabels = [];
+        const borrowStatusData = [];
+        for (const [key, label] of Object.entries(statusMap)) {
+            const found = statusAgg.find(s => s._id === key);
+            borrowStatusLabels.push(label);
+            borrowStatusData.push(found ? found.count : 0);
+        }
+
+        // 4. Tiền cọc Escrow (Doughnut / Metric)
+        const depAgg = await BorrowRequest.aggregate([
+            {
+                $group: {
+                    _id: '$depositStatus',
+                    totalAmount: { $sum: '$depositAmount' },
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+        const depositStats = {
+            held: (depAgg.find(d => d._id === 'held')?.totalAmount) || 0,
+            refunded: (depAgg.find(d => d._id === 'refunded')?.totalAmount) || 0,
+            pending: (depAgg.find(d => d._id === 'pending')?.totalAmount) || 0,
+        };
 
         res.status(200).json({
             success: true,
@@ -32,8 +103,18 @@ exports.getStats = async (req, res) => {
                 totalToys,
                 activeLoans,
                 pendingApprovals,
+                pendingToys,
+                totalReports,
+                range,
                 chartData,
-                chartLabels
+                chartLabels,
+                usersTrend,
+                borrowsTrend,
+                categoryLabels,
+                categoryData,
+                borrowStatusLabels,
+                borrowStatusData,
+                depositStats
             }
         });
     } catch (err) {
